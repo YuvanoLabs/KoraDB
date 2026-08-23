@@ -1,4 +1,4 @@
-# YuvanoLabs KoraDB Security Model (working name)
+# YuvanoLabs KoraDB Security Model
 
 This describes the security of the KoraDB **gRPC server**. (The in-process engine and local-file
 CLI run in the caller's own process and trust boundary; OS file permissions on the `.db` file are

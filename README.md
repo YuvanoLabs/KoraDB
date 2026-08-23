@@ -1,4 +1,4 @@
-# YuvanoLabs KoraDB (working name)
+# YuvanoLabs KoraDB
 
 A **protobuf-native local document store with an optional gRPC server**, written in Go.
 
@@ -23,10 +23,9 @@ and stores the descriptors alongside the data, so documents remain fully queryab
 > release hardening are not complete. Start with the
 > [product assessment](docs/PRODUCT_ASSESSMENT.md) and [roadmap](docs/ROADMAP.md).
 >
-> **Naming status:** “YuvanoLabs KoraDB” is a working name, not a cleared public mark. The
-> unqualified `KoraDB` name is crowded, and public releases are blocked until formal trademark
-> clearance, namespace reservations, and the source migration are complete. See the
-> [naming and namespace review](docs/NAMING_AND_NAMESPACES.md).
+> **Naming status:** `YuvanoLabs KoraDB` is a provisional brand. The unqualified `KoraDB` name is
+> crowded, and public releases are blocked until formal trademark clearance, namespace reservations,
+> and the source migration are complete. See the [naming and namespace review](docs/NAMING_AND_NAMESPACES.md).
 
 The intended product direction is one logical data API with two deployment providers:
 
@@ -201,9 +200,9 @@ bbolt (MIT); `google.golang.org/protobuf`, `google.golang.org/grpc`, `bufbuild/p
 organization's OSS/legal process before shipping.
 
 This repository copy does not yet contain a project `LICENSE`; adding one is a public-release
-gate. A dated preliminary name and namespace screen has been completed, but it found substantial
-collision risk for the unqualified `KoraDB` name. Formal legal clearance, legal-owner
-confirmation, and actual reservations remain pending. The decision, exact provisional
-coordinates, evidence, and owner checklist are in the
+gate. A dated name and namespace screen has been completed, and it found substantial collision
+risk for the unqualified `KoraDB` name. Formal legal clearance, legal-owner confirmation, and
+actual reservations remain pending. The decision, exact provisional coordinates, evidence, and owner
+checklist are in the
 [naming and namespace review](docs/NAMING_AND_NAMESPACES.md); the machine-readable release state
 is in [`product.identity.yaml`](product.identity.yaml).

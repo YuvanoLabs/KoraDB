@@ -1,4 +1,4 @@
-# YuvanoLabs KoraDB Schema Evolution Contract (working name)
+# YuvanoLabs KoraDB Schema Evolution Contract
 
 KoraDB stores protobuf wire bytes, so compatible protobuf changes can be read without rewriting
 every existing document. That is a major benefit, but it applies only when field-number, wire-type,

@@ -1,4 +1,4 @@
-# YuvanoLabs KoraDB Product and Enterprise Architecture Assessment (working name)
+# YuvanoLabs KoraDB Product and Enterprise Architecture Assessment
 
 > Assessment date: 2026-07-19  
 > Scope: repository, executable behavior available in this workspace, product positioning,
@@ -312,11 +312,11 @@ It confirmed that the unqualified **KoraDB** name is crowded. In particular,
 typed protobuf store with in-process, server, and replicated modes. Other repositories and a
 historical npm command use the same or closely related name.
 
-The repository therefore treats **YuvanoLabs KoraDB as a working name only** and blocks normal
+The repository therefore treats **YuvanoLabs KoraDB as a provisional name** and blocks normal
 release builds. No relevant exact public record was found for several YuvanoLabs-qualified
 coordinates at the review time, but “not found” is neither ownership nor a guarantee of
 availability. The final name still needs comprehensive trademark clearance, confirmation of the
-legal owner, actual account/domain reservations, and a coordinated source namespace migration.
+legal owner, actual reservations, and a coordinated source namespace migration.
 
 The full evidence, provisional coordinates, decision rules, owner checklist, and legal limits of
 the screen are in [NAMING_AND_NAMESPACES.md](NAMING_AND_NAMESPACES.md). The release state is

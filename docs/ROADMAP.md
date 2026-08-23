@@ -1,4 +1,4 @@
-# YuvanoLabs KoraDB Roadmap (working name)
+# YuvanoLabs KoraDB Roadmap
 
 This roadmap is organized by release gates rather than feature ambition. A phase is complete only
 when its exit criteria are met. Dates should be assigned after owners, design partners, and target

@@ -1,9 +1,9 @@
-# YuvanoLabs KoraDB Documentation (working name)
+# YuvanoLabs KoraDB Documentation
 
 KoraDB is currently an engineering prototype. Read the documents in this order:
 
 1. [Naming and namespace launch review](NAMING_AND_NAMESPACES.md) — current naming decision,
-   collision evidence, provisional coordinates, reservation checklist, and enforced launch block.
+   collision evidence, provisional coordinates, and reserved release gates.
 2. [Product and enterprise assessment](PRODUCT_ASSESSMENT.md) — target users, benefits,
    competitive position, source-confirmed gaps, SDK priorities, and launch gates.
 3. [Roadmap](ROADMAP.md) — prioritized development rounds and exit criteria.

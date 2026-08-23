@@ -20,13 +20,13 @@ professional must clear the final mark in every market where the product will be
 | Candidate or decision | Status | Reason |
 |---|---|---|
 | `KoraDB` as the unqualified public product name | Do not launch | The name is already used by multiple software/database projects, including a closely related protobuf store. It is descriptive of “protobuf database,” making differentiation and searchability weak. |
-| `YuvanoLabs KoraDB` | Working name only | The company qualifier improves attribution, but the embedded `KoraDB` term remains crowded. It needs formal clearance and an explicit owner decision. |
+| `YuvanoLabs KoraDB` | Provisional | The company qualifier improves attribution, but the embedded `KoraDB` term remains crowded. It needs formal clearance and an explicit owner decision. |
 | A new distinctive coined product name | Preferred public-launch path | A unique mark offers better searchability, package availability, defensibility, and future product-family expansion. It still requires a full clearance search. |
 | Current source identifiers (`module KoraDB`, `KoraDB.v1`) | Development only | They are not globally qualified and would create avoidable Go/protobuf compatibility debt if published. |
 | Public release | Blocked | Required approvals and reservations in `product.identity.yaml` are pending. |
 
-The repository may continue using **KoraDB as a development codename**. Documentation must call
-`YuvanoLabs KoraDB` a working name until the final decision is recorded. Do not use `®`, claim
+The repository may continue using **KoraDB as a development codename**. Use `YuvanoLabs KoraDB`
+as a documented provisional name until the final decision is recorded. Do not use `®`, claim
 registration, publish packages, or promote public container images under these coordinates before
 clearance.
 
@@ -181,7 +181,7 @@ each registry's policy permits.
    product IP.
 2. Engage trademark counsel, define target territories and goods/services, perform comprehensive
    clearance, and record the written decision.
-3. Decide and approve either a distinctive new mark or the qualified working name.
+3. Decide and approve either a distinctive new mark or the provisional qualified mark.
 4. Register the primary domain and essential defensive variants. Enable multi-factor
    authentication, auto-renewal, recovery contacts, transfer lock, and DNS change controls.
 5. Create the GitHub organization under company custody. Require at least two organization owners,

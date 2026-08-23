@@ -1,4 +1,4 @@
-# YuvanoLabs KoraDB Architecture (working name)
+# YuvanoLabs KoraDB Architecture
 
 KoraDB is built in layers. Each layer depends only on those below it and was proven with
 tests before the next was started. This document explains how each works and why.

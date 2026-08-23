@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-// PRE-RELEASE WORKING NAMESPACE. The public release gate requires migration to
+// PRE-RELEASE NAMESPACE. The public release gate requires migration to
 // the approved company-qualified package recorded in product.identity.yaml.
 // Regenerate all committed stubs as one coordinated change after the final
 // product name, repository, and legal owner are approved.
