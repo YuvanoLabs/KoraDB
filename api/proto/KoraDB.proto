@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+// PRE-RELEASE WORKING NAMESPACE. The public release gate requires migration to
+// the approved company-qualified package recorded in product.identity.yaml.
+// Regenerate all committed stubs as one coordinated change after the final
+// product name, repository, and legal owner are approved.
+//
+// KoraDB.v1 is the wire contract for the KoraDB gRPC server. It is a FIXED
+// schema: documents themselves are carried as JSON strings, because each
+// collection has its own user-defined message type that the server stores as
+// protobuf bytes internally. This keeps one stable service surface while
+// supporting arbitrarily many user schemas.
+package KoraDB.v1;
+
+option go_package = "KoraDB/api/gen/KoraDBv1;KoraDBv1";
+
+service KoraDB {
+  // Schema management.
+  rpc PutSchema(PutSchemaRequest) returns (PutSchemaResponse);
+  rpc ListSchemas(ListSchemasRequest) returns (ListSchemasResponse);
+
+  // Collection management.
+  rpc CreateCollection(CreateCollectionRequest) returns (CreateCollectionResponse);
+  rpc ListCollections(ListCollectionsRequest) returns (ListCollectionsResponse);
+
+  // Document CRUD.
+  rpc Insert(InsertRequest) returns (InsertResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+  // Query.
+  rpc Query(QueryRequest) returns (QueryResponse);
+
+  // API key management (admin only). Runtime key management must go through the
+  // running server because the database file is exclusively locked while it
+  // serves; the very first admin key is created out-of-band via the server's
+  // `bootstrap` subcommand while the server is stopped.
+  rpc CreateKey(CreateKeyRequest) returns (CreateKeyResponse);
+  rpc ListKeys(ListKeysRequest) returns (ListKeysResponse);
+  rpc RevokeKey(RevokeKeyRequest) returns (RevokeKeyResponse);
+}
+
+// Role is a coarse access level. Higher roles include lower-role permissions.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_READONLY = 1;   // Get, Query, ListSchemas, ListCollections
+  ROLE_READWRITE = 2;  // + Insert, Update, Delete
+  ROLE_ADMIN = 3;      // + PutSchema, CreateCollection, key management
+}
+
+// --- schema ---
+
+message PutSchemaRequest {
+  string name = 1;          // logical .proto filename, e.g. "user.proto"
+  string proto_source = 2;  // full .proto source text, compiled server-side
+}
+message PutSchemaResponse {
+  int32 version = 1;        // new version (bumped on re-register / evolution)
+}
+
+message ListSchemasRequest {}
+message ListSchemasResponse {
+  repeated SchemaInfo schemas = 1;
+}
+message SchemaInfo {
+  string name = 1;
+  int32 version = 2;
+}
+
+// --- collections ---
+
+message CreateCollectionRequest {
+  string name = 1;
+  string message_type = 2;     // fully-qualified, e.g. "example.User"
+  string key_field = 3;        // empty => auto-generated keys
+  repeated string indexes = 4; // fields to maintain secondary indexes on
+}
+message CreateCollectionResponse {}
+
+message ListCollectionsRequest {}
+message ListCollectionsResponse {
+  repeated CollectionInfo collections = 1;
+}
+message CollectionInfo {
+  string name = 1;
+  string message_type = 2;
+  string key_kind = 3;
+  string key_field = 4;
+  repeated string indexes = 5;
+}
+
+// --- documents ---
+
+message InsertRequest {
+  string collection = 1;
+  string json = 2;
+}
+message InsertResponse {
+  string id = 1;
+}
+
+message GetRequest {
+  string collection = 1;
+  string id = 2;
+}
+message GetResponse {
+  string json = 1;
+}
+
+message UpdateRequest {
+  string collection = 1;
+  string id = 2;
+  string json = 3;
+}
+message UpdateResponse {}
+
+message DeleteRequest {
+  string collection = 1;
+  string id = 2;
+}
+message DeleteResponse {}
+
+// --- query ---
+
+enum Op {
+  OP_UNSPECIFIED = 0;
+  OP_EQ = 1;
+  OP_NE = 2;
+  OP_GT = 3;
+  OP_GTE = 4;
+  OP_LT = 5;
+  OP_LTE = 6;
+}
+
+// Filter is a recursive query AST: a single comparison, or a boolean group.
+message Filter {
+  oneof node {
+    Cmp cmp = 1;
+    BoolGroup and_group = 2;
+    BoolGroup or_group = 3;
+  }
+}
+message Cmp {
+  string field = 1;
+  Op op = 2;
+  string value = 3;
+}
+message BoolGroup {
+  repeated Filter filters = 1;
+}
+
+message QueryRequest {
+  string collection = 1;
+  Filter filter = 2; // omit to match all documents
+}
+message QueryResponse {
+  repeated Document results = 1;
+}
+message Document {
+  string id = 1;
+  string json = 2;
+}
+
+// --- api keys ---
+
+message CreateKeyRequest {
+  string name = 1; // human-readable principal name (for audit), not a secret
+  Role role = 2;
+}
+message CreateKeyResponse {
+  string key_id = 1;
+  string token = 2; // shown ONCE; only its hash is stored server-side
+}
+
+message ListKeysRequest {}
+message ListKeysResponse {
+  repeated KeyInfo keys = 1;
+}
+message KeyInfo {
+  string key_id = 1;
+  string name = 2;
+  Role role = 3;
+  int64 created_at_unix = 4;
+}
+
+message RevokeKeyRequest {
+  string key_id = 1;
+}
+message RevokeKeyResponse {}

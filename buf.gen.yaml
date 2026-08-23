@@ -1,0 +1,12 @@
+version: v2
+managed:
+  enabled: true
+plugins:
+  # Pure-Go plugins, installed via `go install` (dev-time only). The generated
+  # .go files are committed, so building KoraDB needs neither buf nor protoc.
+  - local: protoc-gen-go
+    out: .
+    opt: module=KoraDB
+  - local: protoc-gen-go-grpc
+    out: .
+    opt: module=KoraDB

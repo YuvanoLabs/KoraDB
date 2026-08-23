@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package example;
+
+// User is the sample schema used by the README walkthrough and the demo script.
+// Note the field numbers: they, not the field names, are what KoraDB writes to
+// disk — which is why records are compact and why new fields can be added later
+// without migrating existing data.
+message User {
+  uint64 id = 1;
+  string name = 2;
+  string email = 3;
+  string city = 4;
+}

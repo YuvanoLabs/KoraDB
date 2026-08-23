@@ -1,0 +1,60 @@
+# Machine-readable release identity for this repository.
+#
+# This file records a PROVISIONAL namespace plan. It does not claim ownership,
+# availability, registration, or trademark clearance. Public release builds are
+# blocked until every approval below is updated with supporting evidence.
+#
+# COMMERCIAL CAUTION: this file names targets that appeared unreserved during a
+# point-in-time screen. Do not publish this repository or manifest before the
+# owner attempts the priority reservations; publication can invite squatting.
+
+identity_schema: 1
+recorded_on: "2026-07-19"
+
+brand:
+  owner_display_name: "YuvanoLabs"
+  legal_owner: "PENDING_OWNER_CONFIRMATION"
+  working_product_name: "YuvanoLabs KoraDB"
+  short_working_name: "KoraDB"
+  public_name_status: "not-cleared"
+
+release:
+  launch_status: "blocked"
+  reason: "The unqualified KoraDB name is crowded; the qualified name and all namespaces require reservation and formal clearance."
+
+approvals:
+  final_product_name: "pending"
+  legal_owner_confirmation: "pending"
+  trademark_clearance: "pending"
+  domain_reservation: "pending"
+  github_owner_reservation: "pending"
+  container_owner_reservation: "pending"
+  package_scope_reservation: "pending"
+  namespace_migration: "pending"
+
+# These are planned coordinates, not assertions that YuvanoLabs owns them.
+planned_namespaces:
+  primary_domain: "yuvanolabs.com"
+  product_web_path: "https://yuvanolabs.com/KoraDB"
+  documentation_host: "https://docs.yuvanolabs.com/KoraDB"
+  github_owner: "yuvanolabs"
+  repository: "https://github.com/yuvanolabs/KoraDB"
+  go_module: "github.com/yuvanolabs/KoraDB"
+  protobuf_package: "yuvanolabs.KoraDB.v1"
+  protobuf_go_package: "github.com/yuvanolabs/KoraDB/api/gen/KoraDBv1;KoraDBv1"
+  npm_package: "@yuvanolabs/KoraDB"
+  python_package: "yuvanolabs-KoraDB"
+  maven_coordinate: "com.yuvanolabs:KoraDB"
+  nuget_package: "YuvanoLabs.KoraDB"
+  rust_crate: "yuvanolabs-KoraDB"
+  primary_container: "ghcr.io/yuvanolabs/KoraDB"
+  secondary_container: "docker.io/yuvanolabs/KoraDB"
+  cli_binary: "yuvanolabs-KoraDB"
+  server_binary: "yuvanolabs-KoraDB-server"
+
+current_development_namespaces:
+  go_module: "KoraDB"
+  protobuf_package: "KoraDB.v1"
+  cli_binary: "KoraDB"
+  server_binary: "KoraDB-server"
+

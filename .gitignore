@@ -1,0 +1,10 @@
+# Build output
+/bin/
+/dist/
+
+# Database files produced by demos/tests
+*.db
+
+# Go workspace files
+go.work
+go.work.sum

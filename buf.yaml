@@ -1,0 +1,13 @@
+version: v2
+modules:
+  - path: api/proto
+lint:
+  use:
+    - STANDARD
+  except:
+    # We keep a flat api/proto layout and an unsuffixed service name by choice.
+    - PACKAGE_DIRECTORY_MATCH
+    - SERVICE_SUFFIX
+breaking:
+  use:
+    - FILE

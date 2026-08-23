@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package example;
+
+// User v2 — evolved from examples/user.proto by ADDING two fields (numbers 5
+// and 6). Existing User records written under v1 remain valid and readable:
+// protobuf identifies fields by number, so the new fields simply read as their
+// zero values for old records. No migration, no rewrite, no downtime.
+message User {
+  uint64 id = 1;
+  string name = 2;
+  string email = 3;
+  string city = 4;
+  int32 age = 5;            // NEW
+  repeated string roles = 6; // NEW
+}
