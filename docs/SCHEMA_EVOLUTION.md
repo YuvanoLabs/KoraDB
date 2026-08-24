@@ -4,9 +4,11 @@ KoraDB stores protobuf wire bytes, so compatible protobuf changes can be read wi
 every existing document. That is a major benefit, but it applies only when field-number, wire-type,
 collection-key, and index rules are enforced.
 
-The current implementation demonstrates an additive change: new fields with new numbers are added
-to a message and old documents remain readable. It does **not yet enforce** the complete contract
-described below.
+The current implementation enforces an initial strict in-place policy: existing message names,
+fields, field numbers, field names, kinds, cardinality, presence, oneof membership, referenced
+types, and existing enum values remain stable. New fields and types are allowed, so old documents
+remain readable. More permissive changes still require an explicit migration workflow and are not
+accepted in place.
 
 ## What “no document rewrite” should mean
 
@@ -115,8 +117,9 @@ This enables deterministic diagnostics, migration, export, and future mixed-vers
 
 ## Imports and modules
 
-Production schema registration should accept a module or file set, not just one source string.
-Imports must resolve from:
+Current registration accepts one submitted root source plus imports resolved from active registered
+schemas and approved standard imports. Production schema registration must progress to a versioned
+module or file-set model. Imports must ultimately resolve from:
 
 1. files in the submitted module;
 2. version-pinned registered dependencies;

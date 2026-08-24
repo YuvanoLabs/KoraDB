@@ -31,6 +31,7 @@ import (
 
 	pb "KoraDB/api/gen/KoraDBv1"
 	"KoraDB/internal/auth"
+	"KoraDB/internal/buildinfo"
 	"KoraDB/internal/certgen"
 	"KoraDB/internal/engine"
 	"KoraDB/internal/server"
@@ -52,6 +53,8 @@ func main() {
 		err = runBootstrap(args)
 	case "gencert":
 		err = runGencert(args)
+	case "version":
+		fmt.Println(buildinfo.String())
 	case "help", "-h", "--help":
 		usage()
 	default:
@@ -72,6 +75,11 @@ func runServe(args []string) error {
 	clientCA := fs.String("tls-client-ca", "", "CA to verify client certs (enables mTLS)")
 	insecure := fs.Bool("insecure", false, "DANGER: disable TLS and authentication (dev only)")
 	fs.Parse(args)
+	if *insecure {
+		if err := requireLoopbackAddress(*addr); err != nil {
+			return err
+		}
+	}
 
 	db, err := engine.Open(*dbPath)
 	if err != nil {
@@ -79,7 +87,10 @@ func runServe(args []string) error {
 	}
 	defer db.Close()
 
-	var opts []grpc.ServerOption
+	var opts = []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(4 << 20),
+		grpc.MaxSendMsgSize(4 << 20),
+	}
 	if *insecure {
 		log.Print("############################################################")
 		log.Print("# WARNING: --insecure: NO TLS and NO AUTH. Anyone who can   #")
@@ -96,12 +107,12 @@ func runServe(args []string) error {
 		if err != nil {
 			return err
 		}
-		has, err := auth.HasAnyKey(db.Store())
+		has, err := auth.HasAdminKey(db.Store())
 		if err != nil {
 			return err
 		}
 		if !has {
-			return fmt.Errorf("refusing to start with no API keys: create the first admin key with "+
+			return fmt.Errorf("refusing to start with no admin API key: create the first admin key with "+
 				"`KoraDB-server bootstrap --db %q` while the server is stopped", *dbPath)
 		}
 		opts = append(opts,
@@ -117,6 +128,7 @@ func runServe(args []string) error {
 	}
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterKoraDBServer(grpcServer, server.New(db))
+	server.RegisterHealthService(grpcServer)
 
 	go gracefulShutdown(grpcServer)
 
@@ -128,6 +140,18 @@ func runServe(args []string) error {
 	}
 	log.Printf("KoraDB-server: listening on %s [%s], database %q", *addr, mode, *dbPath)
 	return grpcServer.Serve(lis)
+}
+
+func requireLoopbackAddress(addr string) error {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return fmt.Errorf("--insecure requires an explicit loopback address such as 127.0.0.1:50051: %w", err)
+	}
+	ip := net.ParseIP(host)
+	if ip == nil || !ip.IsLoopback() {
+		return fmt.Errorf("--insecure is restricted to loopback addresses; got %q", addr)
+	}
+	return nil
 }
 
 func serverTLS(certFile, keyFile, clientCAFile string) (credentials.TransportCredentials, error) {
@@ -176,6 +200,9 @@ func runBootstrap(args []string) error {
 	role, err := auth.ParseRole(*roleStr)
 	if err != nil {
 		return err
+	}
+	if role != auth.RoleAdmin {
+		return fmt.Errorf("bootstrap must create an admin key; create lower-privileged keys through the secured server")
 	}
 	db, err := engine.Open(*dbPath)
 	if err != nil {
@@ -238,11 +265,12 @@ Subcommands:
   serve       run the server (default)
                 --addr :50051  --db KoraDB.db
                 --tls-cert FILE --tls-key FILE [--tls-client-ca FILE]
-                --insecure   (DANGER: no TLS, no auth; dev only)
+                --insecure   (DANGER: no TLS, no auth; loopback dev only)
   bootstrap   create the first admin API key (run with the server stopped)
                 --db KoraDB.db --name admin --role admin
   gencert     generate development TLS certificates
                 --dir certs --host localhost,127.0.0.1 --days 365
+  version     print build identity
 
 Security: serve is fail-closed — it will not start without TLS and at least one
 API key unless --insecure is given.

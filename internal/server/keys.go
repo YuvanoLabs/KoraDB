@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,6 +44,9 @@ func (s *Server) ListKeys(ctx context.Context, _ *pb.ListKeysRequest) (*pb.ListK
 
 func (s *Server) RevokeKey(ctx context.Context, req *pb.RevokeKeyRequest) (*pb.RevokeKeyResponse, error) {
 	if err := auth.Revoke(s.db.Store(), req.GetKeyId()); err != nil {
+		if errors.Is(err, auth.ErrLastAdmin) {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.RevokeKeyResponse{}, nil

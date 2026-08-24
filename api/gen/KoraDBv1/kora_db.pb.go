@@ -2,8 +2,13 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        (unknown)
-// source: KoraDB.proto
+// source: kora_db.proto
 
+// PRE-RELEASE NAMESPACE. The public release gate requires migration to the
+// approved company-qualified package recorded in product.identity.yaml.
+// Regenerate all committed stubs as one coordinated change after canonical
+// package ownership and legal clearance are complete.
+//
 // KoraDB.v1 is the wire contract for the KoraDB gRPC server. It is a FIXED
 // schema: documents themselves are carried as JSON strings, because each
 // collection has its own user-defined message type that the server stores as
@@ -64,11 +69,11 @@ func (x Role) String() string {
 }
 
 func (Role) Descriptor() protoreflect.EnumDescriptor {
-	return file_KoraDB_proto_enumTypes[0].Descriptor()
+	return file_kora_db_proto_enumTypes[0].Descriptor()
 }
 
 func (Role) Type() protoreflect.EnumType {
-	return &file_KoraDB_proto_enumTypes[0]
+	return &file_kora_db_proto_enumTypes[0]
 }
 
 func (x Role) Number() protoreflect.EnumNumber {
@@ -77,7 +82,7 @@ func (x Role) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Role.Descriptor instead.
 func (Role) EnumDescriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{0}
+	return file_kora_db_proto_rawDescGZIP(), []int{0}
 }
 
 type Op int32
@@ -125,11 +130,11 @@ func (x Op) String() string {
 }
 
 func (Op) Descriptor() protoreflect.EnumDescriptor {
-	return file_KoraDB_proto_enumTypes[1].Descriptor()
+	return file_kora_db_proto_enumTypes[1].Descriptor()
 }
 
 func (Op) Type() protoreflect.EnumType {
-	return &file_KoraDB_proto_enumTypes[1]
+	return &file_kora_db_proto_enumTypes[1]
 }
 
 func (x Op) Number() protoreflect.EnumNumber {
@@ -138,7 +143,7 @@ func (x Op) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Op.Descriptor instead.
 func (Op) EnumDescriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{1}
+	return file_kora_db_proto_rawDescGZIP(), []int{1}
 }
 
 type PutSchemaRequest struct {
@@ -151,7 +156,7 @@ type PutSchemaRequest struct {
 
 func (x *PutSchemaRequest) Reset() {
 	*x = PutSchemaRequest{}
-	mi := &file_KoraDB_proto_msgTypes[0]
+	mi := &file_kora_db_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -163,7 +168,7 @@ func (x *PutSchemaRequest) String() string {
 func (*PutSchemaRequest) ProtoMessage() {}
 
 func (x *PutSchemaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[0]
+	mi := &file_kora_db_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +181,7 @@ func (x *PutSchemaRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutSchemaRequest.ProtoReflect.Descriptor instead.
 func (*PutSchemaRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{0}
+	return file_kora_db_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *PutSchemaRequest) GetName() string {
@@ -202,7 +207,7 @@ type PutSchemaResponse struct {
 
 func (x *PutSchemaResponse) Reset() {
 	*x = PutSchemaResponse{}
-	mi := &file_KoraDB_proto_msgTypes[1]
+	mi := &file_kora_db_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +219,7 @@ func (x *PutSchemaResponse) String() string {
 func (*PutSchemaResponse) ProtoMessage() {}
 
 func (x *PutSchemaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[1]
+	mi := &file_kora_db_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +232,7 @@ func (x *PutSchemaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutSchemaResponse.ProtoReflect.Descriptor instead.
 func (*PutSchemaResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{1}
+	return file_kora_db_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PutSchemaResponse) GetVersion() int32 {
@@ -245,7 +250,7 @@ type ListSchemasRequest struct {
 
 func (x *ListSchemasRequest) Reset() {
 	*x = ListSchemasRequest{}
-	mi := &file_KoraDB_proto_msgTypes[2]
+	mi := &file_kora_db_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -257,7 +262,7 @@ func (x *ListSchemasRequest) String() string {
 func (*ListSchemasRequest) ProtoMessage() {}
 
 func (x *ListSchemasRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[2]
+	mi := &file_kora_db_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -270,7 +275,7 @@ func (x *ListSchemasRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSchemasRequest.ProtoReflect.Descriptor instead.
 func (*ListSchemasRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{2}
+	return file_kora_db_proto_rawDescGZIP(), []int{2}
 }
 
 type ListSchemasResponse struct {
@@ -282,7 +287,7 @@ type ListSchemasResponse struct {
 
 func (x *ListSchemasResponse) Reset() {
 	*x = ListSchemasResponse{}
-	mi := &file_KoraDB_proto_msgTypes[3]
+	mi := &file_kora_db_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +299,7 @@ func (x *ListSchemasResponse) String() string {
 func (*ListSchemasResponse) ProtoMessage() {}
 
 func (x *ListSchemasResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[3]
+	mi := &file_kora_db_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +312,7 @@ func (x *ListSchemasResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSchemasResponse.ProtoReflect.Descriptor instead.
 func (*ListSchemasResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{3}
+	return file_kora_db_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListSchemasResponse) GetSchemas() []*SchemaInfo {
@@ -327,7 +332,7 @@ type SchemaInfo struct {
 
 func (x *SchemaInfo) Reset() {
 	*x = SchemaInfo{}
-	mi := &file_KoraDB_proto_msgTypes[4]
+	mi := &file_kora_db_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +344,7 @@ func (x *SchemaInfo) String() string {
 func (*SchemaInfo) ProtoMessage() {}
 
 func (x *SchemaInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[4]
+	mi := &file_kora_db_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +357,7 @@ func (x *SchemaInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchemaInfo.ProtoReflect.Descriptor instead.
 func (*SchemaInfo) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{4}
+	return file_kora_db_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SchemaInfo) GetName() string {
@@ -381,7 +386,7 @@ type CreateCollectionRequest struct {
 
 func (x *CreateCollectionRequest) Reset() {
 	*x = CreateCollectionRequest{}
-	mi := &file_KoraDB_proto_msgTypes[5]
+	mi := &file_kora_db_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +398,7 @@ func (x *CreateCollectionRequest) String() string {
 func (*CreateCollectionRequest) ProtoMessage() {}
 
 func (x *CreateCollectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[5]
+	mi := &file_kora_db_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +411,7 @@ func (x *CreateCollectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCollectionRequest.ProtoReflect.Descriptor instead.
 func (*CreateCollectionRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{5}
+	return file_kora_db_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CreateCollectionRequest) GetName() string {
@@ -445,7 +450,7 @@ type CreateCollectionResponse struct {
 
 func (x *CreateCollectionResponse) Reset() {
 	*x = CreateCollectionResponse{}
-	mi := &file_KoraDB_proto_msgTypes[6]
+	mi := &file_kora_db_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -457,7 +462,7 @@ func (x *CreateCollectionResponse) String() string {
 func (*CreateCollectionResponse) ProtoMessage() {}
 
 func (x *CreateCollectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[6]
+	mi := &file_kora_db_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -470,7 +475,7 @@ func (x *CreateCollectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCollectionResponse.ProtoReflect.Descriptor instead.
 func (*CreateCollectionResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{6}
+	return file_kora_db_proto_rawDescGZIP(), []int{6}
 }
 
 type ListCollectionsRequest struct {
@@ -481,7 +486,7 @@ type ListCollectionsRequest struct {
 
 func (x *ListCollectionsRequest) Reset() {
 	*x = ListCollectionsRequest{}
-	mi := &file_KoraDB_proto_msgTypes[7]
+	mi := &file_kora_db_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -493,7 +498,7 @@ func (x *ListCollectionsRequest) String() string {
 func (*ListCollectionsRequest) ProtoMessage() {}
 
 func (x *ListCollectionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[7]
+	mi := &file_kora_db_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -506,7 +511,7 @@ func (x *ListCollectionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCollectionsRequest.ProtoReflect.Descriptor instead.
 func (*ListCollectionsRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{7}
+	return file_kora_db_proto_rawDescGZIP(), []int{7}
 }
 
 type ListCollectionsResponse struct {
@@ -518,7 +523,7 @@ type ListCollectionsResponse struct {
 
 func (x *ListCollectionsResponse) Reset() {
 	*x = ListCollectionsResponse{}
-	mi := &file_KoraDB_proto_msgTypes[8]
+	mi := &file_kora_db_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -530,7 +535,7 @@ func (x *ListCollectionsResponse) String() string {
 func (*ListCollectionsResponse) ProtoMessage() {}
 
 func (x *ListCollectionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[8]
+	mi := &file_kora_db_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -543,7 +548,7 @@ func (x *ListCollectionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCollectionsResponse.ProtoReflect.Descriptor instead.
 func (*ListCollectionsResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{8}
+	return file_kora_db_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListCollectionsResponse) GetCollections() []*CollectionInfo {
@@ -566,7 +571,7 @@ type CollectionInfo struct {
 
 func (x *CollectionInfo) Reset() {
 	*x = CollectionInfo{}
-	mi := &file_KoraDB_proto_msgTypes[9]
+	mi := &file_kora_db_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -578,7 +583,7 @@ func (x *CollectionInfo) String() string {
 func (*CollectionInfo) ProtoMessage() {}
 
 func (x *CollectionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[9]
+	mi := &file_kora_db_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -591,7 +596,7 @@ func (x *CollectionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectionInfo.ProtoReflect.Descriptor instead.
 func (*CollectionInfo) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{9}
+	return file_kora_db_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CollectionInfo) GetName() string {
@@ -639,7 +644,7 @@ type InsertRequest struct {
 
 func (x *InsertRequest) Reset() {
 	*x = InsertRequest{}
-	mi := &file_KoraDB_proto_msgTypes[10]
+	mi := &file_kora_db_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -651,7 +656,7 @@ func (x *InsertRequest) String() string {
 func (*InsertRequest) ProtoMessage() {}
 
 func (x *InsertRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[10]
+	mi := &file_kora_db_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -664,7 +669,7 @@ func (x *InsertRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InsertRequest.ProtoReflect.Descriptor instead.
 func (*InsertRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{10}
+	return file_kora_db_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *InsertRequest) GetCollection() string {
@@ -690,7 +695,7 @@ type InsertResponse struct {
 
 func (x *InsertResponse) Reset() {
 	*x = InsertResponse{}
-	mi := &file_KoraDB_proto_msgTypes[11]
+	mi := &file_kora_db_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -702,7 +707,7 @@ func (x *InsertResponse) String() string {
 func (*InsertResponse) ProtoMessage() {}
 
 func (x *InsertResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[11]
+	mi := &file_kora_db_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -715,7 +720,7 @@ func (x *InsertResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InsertResponse.ProtoReflect.Descriptor instead.
 func (*InsertResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{11}
+	return file_kora_db_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *InsertResponse) GetId() string {
@@ -735,7 +740,7 @@ type GetRequest struct {
 
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
-	mi := &file_KoraDB_proto_msgTypes[12]
+	mi := &file_kora_db_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -747,7 +752,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[12]
+	mi := &file_kora_db_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -760,7 +765,7 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{12}
+	return file_kora_db_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetRequest) GetCollection() string {
@@ -786,7 +791,7 @@ type GetResponse struct {
 
 func (x *GetResponse) Reset() {
 	*x = GetResponse{}
-	mi := &file_KoraDB_proto_msgTypes[13]
+	mi := &file_kora_db_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -798,7 +803,7 @@ func (x *GetResponse) String() string {
 func (*GetResponse) ProtoMessage() {}
 
 func (x *GetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[13]
+	mi := &file_kora_db_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -811,7 +816,7 @@ func (x *GetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetResponse.ProtoReflect.Descriptor instead.
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{13}
+	return file_kora_db_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetResponse) GetJson() string {
@@ -832,7 +837,7 @@ type UpdateRequest struct {
 
 func (x *UpdateRequest) Reset() {
 	*x = UpdateRequest{}
-	mi := &file_KoraDB_proto_msgTypes[14]
+	mi := &file_kora_db_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -844,7 +849,7 @@ func (x *UpdateRequest) String() string {
 func (*UpdateRequest) ProtoMessage() {}
 
 func (x *UpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[14]
+	mi := &file_kora_db_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -857,7 +862,7 @@ func (x *UpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{14}
+	return file_kora_db_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *UpdateRequest) GetCollection() string {
@@ -889,7 +894,7 @@ type UpdateResponse struct {
 
 func (x *UpdateResponse) Reset() {
 	*x = UpdateResponse{}
-	mi := &file_KoraDB_proto_msgTypes[15]
+	mi := &file_kora_db_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +906,7 @@ func (x *UpdateResponse) String() string {
 func (*UpdateResponse) ProtoMessage() {}
 
 func (x *UpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[15]
+	mi := &file_kora_db_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +919,7 @@ func (x *UpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateResponse.ProtoReflect.Descriptor instead.
 func (*UpdateResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{15}
+	return file_kora_db_proto_rawDescGZIP(), []int{15}
 }
 
 type DeleteRequest struct {
@@ -927,7 +932,7 @@ type DeleteRequest struct {
 
 func (x *DeleteRequest) Reset() {
 	*x = DeleteRequest{}
-	mi := &file_KoraDB_proto_msgTypes[16]
+	mi := &file_kora_db_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -939,7 +944,7 @@ func (x *DeleteRequest) String() string {
 func (*DeleteRequest) ProtoMessage() {}
 
 func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[16]
+	mi := &file_kora_db_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -952,7 +957,7 @@ func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{16}
+	return file_kora_db_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DeleteRequest) GetCollection() string {
@@ -977,7 +982,7 @@ type DeleteResponse struct {
 
 func (x *DeleteResponse) Reset() {
 	*x = DeleteResponse{}
-	mi := &file_KoraDB_proto_msgTypes[17]
+	mi := &file_kora_db_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -989,7 +994,7 @@ func (x *DeleteResponse) String() string {
 func (*DeleteResponse) ProtoMessage() {}
 
 func (x *DeleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[17]
+	mi := &file_kora_db_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1002,7 +1007,7 @@ func (x *DeleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResponse.ProtoReflect.Descriptor instead.
 func (*DeleteResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{17}
+	return file_kora_db_proto_rawDescGZIP(), []int{17}
 }
 
 // Filter is a recursive query AST: a single comparison, or a boolean group.
@@ -1020,7 +1025,7 @@ type Filter struct {
 
 func (x *Filter) Reset() {
 	*x = Filter{}
-	mi := &file_KoraDB_proto_msgTypes[18]
+	mi := &file_kora_db_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1032,7 +1037,7 @@ func (x *Filter) String() string {
 func (*Filter) ProtoMessage() {}
 
 func (x *Filter) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[18]
+	mi := &file_kora_db_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1045,7 +1050,7 @@ func (x *Filter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Filter.ProtoReflect.Descriptor instead.
 func (*Filter) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{18}
+	return file_kora_db_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *Filter) GetNode() isFilter_Node {
@@ -1107,7 +1112,7 @@ func (*Filter_OrGroup) isFilter_Node() {}
 type Cmp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
-	Op            Op                     `protobuf:"varint,2,opt,name=op,proto3,enum=KoraDB.v1.Op" json:"op,omitempty"`
+	Op            Op                     `protobuf:"varint,2,opt,name=op,proto3,enum=koradb.v1.Op" json:"op,omitempty"`
 	Value         string                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1115,7 +1120,7 @@ type Cmp struct {
 
 func (x *Cmp) Reset() {
 	*x = Cmp{}
-	mi := &file_KoraDB_proto_msgTypes[19]
+	mi := &file_kora_db_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1127,7 +1132,7 @@ func (x *Cmp) String() string {
 func (*Cmp) ProtoMessage() {}
 
 func (x *Cmp) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[19]
+	mi := &file_kora_db_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1140,7 +1145,7 @@ func (x *Cmp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Cmp.ProtoReflect.Descriptor instead.
 func (*Cmp) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{19}
+	return file_kora_db_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Cmp) GetField() string {
@@ -1173,7 +1178,7 @@ type BoolGroup struct {
 
 func (x *BoolGroup) Reset() {
 	*x = BoolGroup{}
-	mi := &file_KoraDB_proto_msgTypes[20]
+	mi := &file_kora_db_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1185,7 +1190,7 @@ func (x *BoolGroup) String() string {
 func (*BoolGroup) ProtoMessage() {}
 
 func (x *BoolGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[20]
+	mi := &file_kora_db_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1198,7 +1203,7 @@ func (x *BoolGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoolGroup.ProtoReflect.Descriptor instead.
 func (*BoolGroup) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{20}
+	return file_kora_db_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *BoolGroup) GetFilters() []*Filter {
@@ -1218,7 +1223,7 @@ type QueryRequest struct {
 
 func (x *QueryRequest) Reset() {
 	*x = QueryRequest{}
-	mi := &file_KoraDB_proto_msgTypes[21]
+	mi := &file_kora_db_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1230,7 +1235,7 @@ func (x *QueryRequest) String() string {
 func (*QueryRequest) ProtoMessage() {}
 
 func (x *QueryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[21]
+	mi := &file_kora_db_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1243,7 +1248,7 @@ func (x *QueryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryRequest.ProtoReflect.Descriptor instead.
 func (*QueryRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{21}
+	return file_kora_db_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *QueryRequest) GetCollection() string {
@@ -1269,7 +1274,7 @@ type QueryResponse struct {
 
 func (x *QueryResponse) Reset() {
 	*x = QueryResponse{}
-	mi := &file_KoraDB_proto_msgTypes[22]
+	mi := &file_kora_db_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1281,7 +1286,7 @@ func (x *QueryResponse) String() string {
 func (*QueryResponse) ProtoMessage() {}
 
 func (x *QueryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[22]
+	mi := &file_kora_db_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1294,7 +1299,7 @@ func (x *QueryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryResponse.ProtoReflect.Descriptor instead.
 func (*QueryResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{22}
+	return file_kora_db_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *QueryResponse) GetResults() []*Document {
@@ -1314,7 +1319,7 @@ type Document struct {
 
 func (x *Document) Reset() {
 	*x = Document{}
-	mi := &file_KoraDB_proto_msgTypes[23]
+	mi := &file_kora_db_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1326,7 +1331,7 @@ func (x *Document) String() string {
 func (*Document) ProtoMessage() {}
 
 func (x *Document) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[23]
+	mi := &file_kora_db_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1339,7 +1344,7 @@ func (x *Document) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Document.ProtoReflect.Descriptor instead.
 func (*Document) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{23}
+	return file_kora_db_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *Document) GetId() string {
@@ -1359,14 +1364,14 @@ func (x *Document) GetJson() string {
 type CreateKeyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // human-readable principal name (for audit), not a secret
-	Role          Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=KoraDB.v1.Role" json:"role,omitempty"`
+	Role          Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=koradb.v1.Role" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateKeyRequest) Reset() {
 	*x = CreateKeyRequest{}
-	mi := &file_KoraDB_proto_msgTypes[24]
+	mi := &file_kora_db_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1378,7 +1383,7 @@ func (x *CreateKeyRequest) String() string {
 func (*CreateKeyRequest) ProtoMessage() {}
 
 func (x *CreateKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[24]
+	mi := &file_kora_db_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1391,7 +1396,7 @@ func (x *CreateKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateKeyRequest.ProtoReflect.Descriptor instead.
 func (*CreateKeyRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{24}
+	return file_kora_db_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CreateKeyRequest) GetName() string {
@@ -1418,7 +1423,7 @@ type CreateKeyResponse struct {
 
 func (x *CreateKeyResponse) Reset() {
 	*x = CreateKeyResponse{}
-	mi := &file_KoraDB_proto_msgTypes[25]
+	mi := &file_kora_db_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1430,7 +1435,7 @@ func (x *CreateKeyResponse) String() string {
 func (*CreateKeyResponse) ProtoMessage() {}
 
 func (x *CreateKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[25]
+	mi := &file_kora_db_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1443,7 +1448,7 @@ func (x *CreateKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateKeyResponse.ProtoReflect.Descriptor instead.
 func (*CreateKeyResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{25}
+	return file_kora_db_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *CreateKeyResponse) GetKeyId() string {
@@ -1468,7 +1473,7 @@ type ListKeysRequest struct {
 
 func (x *ListKeysRequest) Reset() {
 	*x = ListKeysRequest{}
-	mi := &file_KoraDB_proto_msgTypes[26]
+	mi := &file_kora_db_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1480,7 +1485,7 @@ func (x *ListKeysRequest) String() string {
 func (*ListKeysRequest) ProtoMessage() {}
 
 func (x *ListKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[26]
+	mi := &file_kora_db_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1493,7 +1498,7 @@ func (x *ListKeysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListKeysRequest.ProtoReflect.Descriptor instead.
 func (*ListKeysRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{26}
+	return file_kora_db_proto_rawDescGZIP(), []int{26}
 }
 
 type ListKeysResponse struct {
@@ -1505,7 +1510,7 @@ type ListKeysResponse struct {
 
 func (x *ListKeysResponse) Reset() {
 	*x = ListKeysResponse{}
-	mi := &file_KoraDB_proto_msgTypes[27]
+	mi := &file_kora_db_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1517,7 +1522,7 @@ func (x *ListKeysResponse) String() string {
 func (*ListKeysResponse) ProtoMessage() {}
 
 func (x *ListKeysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[27]
+	mi := &file_kora_db_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1530,7 +1535,7 @@ func (x *ListKeysResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListKeysResponse.ProtoReflect.Descriptor instead.
 func (*ListKeysResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{27}
+	return file_kora_db_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ListKeysResponse) GetKeys() []*KeyInfo {
@@ -1544,7 +1549,7 @@ type KeyInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	KeyId         string                 `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Role          Role                   `protobuf:"varint,3,opt,name=role,proto3,enum=KoraDB.v1.Role" json:"role,omitempty"`
+	Role          Role                   `protobuf:"varint,3,opt,name=role,proto3,enum=koradb.v1.Role" json:"role,omitempty"`
 	CreatedAtUnix int64                  `protobuf:"varint,4,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1552,7 +1557,7 @@ type KeyInfo struct {
 
 func (x *KeyInfo) Reset() {
 	*x = KeyInfo{}
-	mi := &file_KoraDB_proto_msgTypes[28]
+	mi := &file_kora_db_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1564,7 +1569,7 @@ func (x *KeyInfo) String() string {
 func (*KeyInfo) ProtoMessage() {}
 
 func (x *KeyInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[28]
+	mi := &file_kora_db_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1577,7 +1582,7 @@ func (x *KeyInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyInfo.ProtoReflect.Descriptor instead.
 func (*KeyInfo) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{28}
+	return file_kora_db_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *KeyInfo) GetKeyId() string {
@@ -1617,7 +1622,7 @@ type RevokeKeyRequest struct {
 
 func (x *RevokeKeyRequest) Reset() {
 	*x = RevokeKeyRequest{}
-	mi := &file_KoraDB_proto_msgTypes[29]
+	mi := &file_kora_db_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1629,7 +1634,7 @@ func (x *RevokeKeyRequest) String() string {
 func (*RevokeKeyRequest) ProtoMessage() {}
 
 func (x *RevokeKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[29]
+	mi := &file_kora_db_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1642,7 +1647,7 @@ func (x *RevokeKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeKeyRequest.ProtoReflect.Descriptor instead.
 func (*RevokeKeyRequest) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{29}
+	return file_kora_db_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *RevokeKeyRequest) GetKeyId() string {
@@ -1660,7 +1665,7 @@ type RevokeKeyResponse struct {
 
 func (x *RevokeKeyResponse) Reset() {
 	*x = RevokeKeyResponse{}
-	mi := &file_KoraDB_proto_msgTypes[30]
+	mi := &file_kora_db_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1672,7 +1677,7 @@ func (x *RevokeKeyResponse) String() string {
 func (*RevokeKeyResponse) ProtoMessage() {}
 
 func (x *RevokeKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_KoraDB_proto_msgTypes[30]
+	mi := &file_kora_db_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1685,23 +1690,22 @@ func (x *RevokeKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeKeyResponse.ProtoReflect.Descriptor instead.
 func (*RevokeKeyResponse) Descriptor() ([]byte, []int) {
-	return file_KoraDB_proto_rawDescGZIP(), []int{30}
+	return file_kora_db_proto_rawDescGZIP(), []int{30}
 }
 
-var File_KoraDB_proto protoreflect.FileDescriptor
+var File_kora_db_proto protoreflect.FileDescriptor
 
-const file_KoraDB_proto_rawDesc = "" +
+const file_kora_db_proto_rawDesc = "" +
 	"\n" +
-	"\rKoraDB.proto\x12\n" +
-	"KoraDB.v1\"I\n" +
+	"\rkora_db.proto\x12\tkoradb.v1\"I\n" +
 	"\x10PutSchemaRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fproto_source\x18\x02 \x01(\tR\vprotoSource\"-\n" +
 	"\x11PutSchemaResponse\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\x05R\aversion\"\x14\n" +
-	"\x12ListSchemasRequest\"G\n" +
-	"\x13ListSchemasResponse\x120\n" +
-	"\aschemas\x18\x01 \x03(\v2\x16.KoraDB.v1.SchemaInfoR\aschemas\":\n" +
+	"\x12ListSchemasRequest\"F\n" +
+	"\x13ListSchemasResponse\x12/\n" +
+	"\aschemas\x18\x01 \x03(\v2\x15.koradb.v1.SchemaInfoR\aschemas\":\n" +
 	"\n" +
 	"SchemaInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -1712,9 +1716,9 @@ const file_KoraDB_proto_rawDesc = "" +
 	"\tkey_field\x18\x03 \x01(\tR\bkeyField\x12\x18\n" +
 	"\aindexes\x18\x04 \x03(\tR\aindexes\"\x1a\n" +
 	"\x18CreateCollectionResponse\"\x18\n" +
-	"\x16ListCollectionsRequest\"W\n" +
-	"\x17ListCollectionsResponse\x12<\n" +
-	"\vcollections\x18\x01 \x03(\v2\x1a.KoraDB.v1.CollectionInfoR\vcollections\"\x99\x01\n" +
+	"\x16ListCollectionsRequest\"V\n" +
+	"\x17ListCollectionsResponse\x12;\n" +
+	"\vcollections\x18\x01 \x03(\v2\x19.koradb.v1.CollectionInfoR\vcollections\"\x99\x01\n" +
 	"\x0eCollectionInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fmessage_type\x18\x02 \x01(\tR\vmessageType\x12\x19\n" +
@@ -1748,41 +1752,41 @@ const file_KoraDB_proto_rawDesc = "" +
 	"collection\x18\x01 \x01(\tR\n" +
 	"collection\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\"\x10\n" +
-	"\x0eDeleteResponse\"\x9f\x01\n" +
-	"\x06Filter\x12#\n" +
-	"\x03cmp\x18\x01 \x01(\v2\x0f.KoraDB.v1.CmpH\x00R\x03cmp\x124\n" +
-	"\tand_group\x18\x02 \x01(\v2\x15.KoraDB.v1.BoolGroupH\x00R\bandGroup\x122\n" +
-	"\bor_group\x18\x03 \x01(\v2\x15.KoraDB.v1.BoolGroupH\x00R\aorGroupB\x06\n" +
-	"\x04node\"Q\n" +
+	"\x0eDeleteResponse\"\x9c\x01\n" +
+	"\x06Filter\x12\"\n" +
+	"\x03cmp\x18\x01 \x01(\v2\x0e.koradb.v1.CmpH\x00R\x03cmp\x123\n" +
+	"\tand_group\x18\x02 \x01(\v2\x14.koradb.v1.BoolGroupH\x00R\bandGroup\x121\n" +
+	"\bor_group\x18\x03 \x01(\v2\x14.koradb.v1.BoolGroupH\x00R\aorGroupB\x06\n" +
+	"\x04node\"P\n" +
 	"\x03Cmp\x12\x14\n" +
-	"\x05field\x18\x01 \x01(\tR\x05field\x12\x1e\n" +
-	"\x02op\x18\x02 \x01(\x0e2\x0e.KoraDB.v1.OpR\x02op\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\"9\n" +
-	"\tBoolGroup\x12,\n" +
-	"\afilters\x18\x01 \x03(\v2\x12.KoraDB.v1.FilterR\afilters\"Z\n" +
+	"\x05field\x18\x01 \x01(\tR\x05field\x12\x1d\n" +
+	"\x02op\x18\x02 \x01(\x0e2\r.koradb.v1.OpR\x02op\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"8\n" +
+	"\tBoolGroup\x12+\n" +
+	"\afilters\x18\x01 \x03(\v2\x11.koradb.v1.FilterR\afilters\"Y\n" +
 	"\fQueryRequest\x12\x1e\n" +
 	"\n" +
 	"collection\x18\x01 \x01(\tR\n" +
-	"collection\x12*\n" +
-	"\x06filter\x18\x02 \x01(\v2\x12.KoraDB.v1.FilterR\x06filter\"?\n" +
-	"\rQueryResponse\x12.\n" +
-	"\aresults\x18\x01 \x03(\v2\x14.KoraDB.v1.DocumentR\aresults\".\n" +
+	"collection\x12)\n" +
+	"\x06filter\x18\x02 \x01(\v2\x11.koradb.v1.FilterR\x06filter\">\n" +
+	"\rQueryResponse\x12-\n" +
+	"\aresults\x18\x01 \x03(\v2\x13.koradb.v1.DocumentR\aresults\".\n" +
 	"\bDocument\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04json\x18\x02 \x01(\tR\x04json\"L\n" +
+	"\x04json\x18\x02 \x01(\tR\x04json\"K\n" +
 	"\x10CreateKeyRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12$\n" +
-	"\x04role\x18\x02 \x01(\x0e2\x10.KoraDB.v1.RoleR\x04role\"@\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
+	"\x04role\x18\x02 \x01(\x0e2\x0f.koradb.v1.RoleR\x04role\"@\n" +
 	"\x11CreateKeyResponse\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\"\x11\n" +
-	"\x0fListKeysRequest\";\n" +
-	"\x10ListKeysResponse\x12'\n" +
-	"\x04keys\x18\x01 \x03(\v2\x13.KoraDB.v1.KeyInfoR\x04keys\"\x82\x01\n" +
+	"\x0fListKeysRequest\":\n" +
+	"\x10ListKeysResponse\x12&\n" +
+	"\x04keys\x18\x01 \x03(\v2\x12.koradb.v1.KeyInfoR\x04keys\"\x81\x01\n" +
 	"\aKeyInfo\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12$\n" +
-	"\x04role\x18\x03 \x01(\x0e2\x10.KoraDB.v1.RoleR\x04role\x12&\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
+	"\x04role\x18\x03 \x01(\x0e2\x0f.koradb.v1.RoleR\x04role\x12&\n" +
 	"\x0fcreated_at_unix\x18\x04 \x01(\x03R\rcreatedAtUnix\")\n" +
 	"\x10RevokeKeyRequest\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\"\x13\n" +
@@ -1802,110 +1806,109 @@ const file_KoraDB_proto_rawDesc = "" +
 	"\x06OP_GTE\x10\x04\x12\t\n" +
 	"\x05OP_LT\x10\x05\x12\n" +
 	"\n" +
-	"\x06OP_LTE\x10\x062\xf2\x06\n" +
-	"\aKoraDB\x12H\n" +
-	"\tPutSchema\x12\x1c.KoraDB.v1.PutSchemaRequest\x1a\x1d.KoraDB.v1.PutSchemaResponse\x12N\n" +
-	"\vListSchemas\x12\x1e.KoraDB.v1.ListSchemasRequest\x1a\x1f.KoraDB.v1.ListSchemasResponse\x12]\n" +
-	"\x10CreateCollection\x12#.KoraDB.v1.CreateCollectionRequest\x1a$.KoraDB.v1.CreateCollectionResponse\x12Z\n" +
-	"\x0fListCollections\x12\".KoraDB.v1.ListCollectionsRequest\x1a#.KoraDB.v1.ListCollectionsResponse\x12?\n" +
-	"\x06Insert\x12\x19.KoraDB.v1.InsertRequest\x1a\x1a.KoraDB.v1.InsertResponse\x126\n" +
-	"\x03Get\x12\x16.KoraDB.v1.GetRequest\x1a\x17.KoraDB.v1.GetResponse\x12?\n" +
-	"\x06Update\x12\x19.KoraDB.v1.UpdateRequest\x1a\x1a.KoraDB.v1.UpdateResponse\x12?\n" +
-	"\x06Delete\x12\x19.KoraDB.v1.DeleteRequest\x1a\x1a.KoraDB.v1.DeleteResponse\x12<\n" +
-	"\x05Query\x12\x18.KoraDB.v1.QueryRequest\x1a\x19.KoraDB.v1.QueryResponse\x12H\n" +
-	"\tCreateKey\x12\x1c.KoraDB.v1.CreateKeyRequest\x1a\x1d.KoraDB.v1.CreateKeyResponse\x12E\n" +
-	"\bListKeys\x12\x1b.KoraDB.v1.ListKeysRequest\x1a\x1c.KoraDB.v1.ListKeysResponse\x12H\n" +
-	"\tRevokeKey\x12\x1c.KoraDB.v1.RevokeKeyRequest\x1a\x1d.KoraDB.v1.RevokeKeyResponseB\x8c\x01\n" +
-	"\x0ecom.KoraDB.v1B\fKoraDBProtoP\x01Z#KoraDB/api/gen/KoraDBv1;KoraDBv1\xa2\x02\x03PXX\xaa\x02\n" +
-	"KoraDB.V1\xca\x02\n" +
-	"KoraDB\\V1\xe2\x02\x16KoraDB\\V1\\GPBMetadata\xea\x02\vKoraDB::V1b\x06proto3"
+	"\x06OP_LTE\x10\x062\xd9\x06\n" +
+	"\x06KoraDB\x12F\n" +
+	"\tPutSchema\x12\x1b.koradb.v1.PutSchemaRequest\x1a\x1c.koradb.v1.PutSchemaResponse\x12L\n" +
+	"\vListSchemas\x12\x1d.koradb.v1.ListSchemasRequest\x1a\x1e.koradb.v1.ListSchemasResponse\x12[\n" +
+	"\x10CreateCollection\x12\".koradb.v1.CreateCollectionRequest\x1a#.koradb.v1.CreateCollectionResponse\x12X\n" +
+	"\x0fListCollections\x12!.koradb.v1.ListCollectionsRequest\x1a\".koradb.v1.ListCollectionsResponse\x12=\n" +
+	"\x06Insert\x12\x18.koradb.v1.InsertRequest\x1a\x19.koradb.v1.InsertResponse\x124\n" +
+	"\x03Get\x12\x15.koradb.v1.GetRequest\x1a\x16.koradb.v1.GetResponse\x12=\n" +
+	"\x06Update\x12\x18.koradb.v1.UpdateRequest\x1a\x19.koradb.v1.UpdateResponse\x12=\n" +
+	"\x06Delete\x12\x18.koradb.v1.DeleteRequest\x1a\x19.koradb.v1.DeleteResponse\x12:\n" +
+	"\x05Query\x12\x17.koradb.v1.QueryRequest\x1a\x18.koradb.v1.QueryResponse\x12F\n" +
+	"\tCreateKey\x12\x1b.koradb.v1.CreateKeyRequest\x1a\x1c.koradb.v1.CreateKeyResponse\x12C\n" +
+	"\bListKeys\x12\x1a.koradb.v1.ListKeysRequest\x1a\x1b.koradb.v1.ListKeysResponse\x12F\n" +
+	"\tRevokeKey\x12\x1b.koradb.v1.RevokeKeyRequest\x1a\x1c.koradb.v1.RevokeKeyResponseB\x83\x01\n" +
+	"\rcom.koradb.v1B\vKoraDbProtoP\x01Z KoraDB/api/gen/KoraDBv1;KoraDBv1\xa2\x02\x03KXX\xaa\x02\tKoradb.V1\xca\x02\tKoradb\\V1\xe2\x02\x15Koradb\\V1\\GPBMetadata\xea\x02\n" +
+	"Koradb::V1b\x06proto3"
 
 var (
-	file_KoraDB_proto_rawDescOnce sync.Once
-	file_KoraDB_proto_rawDescData []byte
+	file_kora_db_proto_rawDescOnce sync.Once
+	file_kora_db_proto_rawDescData []byte
 )
 
-func file_KoraDB_proto_rawDescGZIP() []byte {
-	file_KoraDB_proto_rawDescOnce.Do(func() {
-		file_KoraDB_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_KoraDB_proto_rawDesc), len(file_KoraDB_proto_rawDesc)))
+func file_kora_db_proto_rawDescGZIP() []byte {
+	file_kora_db_proto_rawDescOnce.Do(func() {
+		file_kora_db_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_kora_db_proto_rawDesc), len(file_kora_db_proto_rawDesc)))
 	})
-	return file_KoraDB_proto_rawDescData
+	return file_kora_db_proto_rawDescData
 }
 
-var file_KoraDB_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_KoraDB_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
-var file_KoraDB_proto_goTypes = []any{
-	(Role)(0),                        // 0: KoraDB.v1.Role
-	(Op)(0),                          // 1: KoraDB.v1.Op
-	(*PutSchemaRequest)(nil),         // 2: KoraDB.v1.PutSchemaRequest
-	(*PutSchemaResponse)(nil),        // 3: KoraDB.v1.PutSchemaResponse
-	(*ListSchemasRequest)(nil),       // 4: KoraDB.v1.ListSchemasRequest
-	(*ListSchemasResponse)(nil),      // 5: KoraDB.v1.ListSchemasResponse
-	(*SchemaInfo)(nil),               // 6: KoraDB.v1.SchemaInfo
-	(*CreateCollectionRequest)(nil),  // 7: KoraDB.v1.CreateCollectionRequest
-	(*CreateCollectionResponse)(nil), // 8: KoraDB.v1.CreateCollectionResponse
-	(*ListCollectionsRequest)(nil),   // 9: KoraDB.v1.ListCollectionsRequest
-	(*ListCollectionsResponse)(nil),  // 10: KoraDB.v1.ListCollectionsResponse
-	(*CollectionInfo)(nil),           // 11: KoraDB.v1.CollectionInfo
-	(*InsertRequest)(nil),            // 12: KoraDB.v1.InsertRequest
-	(*InsertResponse)(nil),           // 13: KoraDB.v1.InsertResponse
-	(*GetRequest)(nil),               // 14: KoraDB.v1.GetRequest
-	(*GetResponse)(nil),              // 15: KoraDB.v1.GetResponse
-	(*UpdateRequest)(nil),            // 16: KoraDB.v1.UpdateRequest
-	(*UpdateResponse)(nil),           // 17: KoraDB.v1.UpdateResponse
-	(*DeleteRequest)(nil),            // 18: KoraDB.v1.DeleteRequest
-	(*DeleteResponse)(nil),           // 19: KoraDB.v1.DeleteResponse
-	(*Filter)(nil),                   // 20: KoraDB.v1.Filter
-	(*Cmp)(nil),                      // 21: KoraDB.v1.Cmp
-	(*BoolGroup)(nil),                // 22: KoraDB.v1.BoolGroup
-	(*QueryRequest)(nil),             // 23: KoraDB.v1.QueryRequest
-	(*QueryResponse)(nil),            // 24: KoraDB.v1.QueryResponse
-	(*Document)(nil),                 // 25: KoraDB.v1.Document
-	(*CreateKeyRequest)(nil),         // 26: KoraDB.v1.CreateKeyRequest
-	(*CreateKeyResponse)(nil),        // 27: KoraDB.v1.CreateKeyResponse
-	(*ListKeysRequest)(nil),          // 28: KoraDB.v1.ListKeysRequest
-	(*ListKeysResponse)(nil),         // 29: KoraDB.v1.ListKeysResponse
-	(*KeyInfo)(nil),                  // 30: KoraDB.v1.KeyInfo
-	(*RevokeKeyRequest)(nil),         // 31: KoraDB.v1.RevokeKeyRequest
-	(*RevokeKeyResponse)(nil),        // 32: KoraDB.v1.RevokeKeyResponse
+var file_kora_db_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_kora_db_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_kora_db_proto_goTypes = []any{
+	(Role)(0),                        // 0: koradb.v1.Role
+	(Op)(0),                          // 1: koradb.v1.Op
+	(*PutSchemaRequest)(nil),         // 2: koradb.v1.PutSchemaRequest
+	(*PutSchemaResponse)(nil),        // 3: koradb.v1.PutSchemaResponse
+	(*ListSchemasRequest)(nil),       // 4: koradb.v1.ListSchemasRequest
+	(*ListSchemasResponse)(nil),      // 5: koradb.v1.ListSchemasResponse
+	(*SchemaInfo)(nil),               // 6: koradb.v1.SchemaInfo
+	(*CreateCollectionRequest)(nil),  // 7: koradb.v1.CreateCollectionRequest
+	(*CreateCollectionResponse)(nil), // 8: koradb.v1.CreateCollectionResponse
+	(*ListCollectionsRequest)(nil),   // 9: koradb.v1.ListCollectionsRequest
+	(*ListCollectionsResponse)(nil),  // 10: koradb.v1.ListCollectionsResponse
+	(*CollectionInfo)(nil),           // 11: koradb.v1.CollectionInfo
+	(*InsertRequest)(nil),            // 12: koradb.v1.InsertRequest
+	(*InsertResponse)(nil),           // 13: koradb.v1.InsertResponse
+	(*GetRequest)(nil),               // 14: koradb.v1.GetRequest
+	(*GetResponse)(nil),              // 15: koradb.v1.GetResponse
+	(*UpdateRequest)(nil),            // 16: koradb.v1.UpdateRequest
+	(*UpdateResponse)(nil),           // 17: koradb.v1.UpdateResponse
+	(*DeleteRequest)(nil),            // 18: koradb.v1.DeleteRequest
+	(*DeleteResponse)(nil),           // 19: koradb.v1.DeleteResponse
+	(*Filter)(nil),                   // 20: koradb.v1.Filter
+	(*Cmp)(nil),                      // 21: koradb.v1.Cmp
+	(*BoolGroup)(nil),                // 22: koradb.v1.BoolGroup
+	(*QueryRequest)(nil),             // 23: koradb.v1.QueryRequest
+	(*QueryResponse)(nil),            // 24: koradb.v1.QueryResponse
+	(*Document)(nil),                 // 25: koradb.v1.Document
+	(*CreateKeyRequest)(nil),         // 26: koradb.v1.CreateKeyRequest
+	(*CreateKeyResponse)(nil),        // 27: koradb.v1.CreateKeyResponse
+	(*ListKeysRequest)(nil),          // 28: koradb.v1.ListKeysRequest
+	(*ListKeysResponse)(nil),         // 29: koradb.v1.ListKeysResponse
+	(*KeyInfo)(nil),                  // 30: koradb.v1.KeyInfo
+	(*RevokeKeyRequest)(nil),         // 31: koradb.v1.RevokeKeyRequest
+	(*RevokeKeyResponse)(nil),        // 32: koradb.v1.RevokeKeyResponse
 }
-var file_KoraDB_proto_depIdxs = []int32{
-	6,  // 0: KoraDB.v1.ListSchemasResponse.schemas:type_name -> KoraDB.v1.SchemaInfo
-	11, // 1: KoraDB.v1.ListCollectionsResponse.collections:type_name -> KoraDB.v1.CollectionInfo
-	21, // 2: KoraDB.v1.Filter.cmp:type_name -> KoraDB.v1.Cmp
-	22, // 3: KoraDB.v1.Filter.and_group:type_name -> KoraDB.v1.BoolGroup
-	22, // 4: KoraDB.v1.Filter.or_group:type_name -> KoraDB.v1.BoolGroup
-	1,  // 5: KoraDB.v1.Cmp.op:type_name -> KoraDB.v1.Op
-	20, // 6: KoraDB.v1.BoolGroup.filters:type_name -> KoraDB.v1.Filter
-	20, // 7: KoraDB.v1.QueryRequest.filter:type_name -> KoraDB.v1.Filter
-	25, // 8: KoraDB.v1.QueryResponse.results:type_name -> KoraDB.v1.Document
-	0,  // 9: KoraDB.v1.CreateKeyRequest.role:type_name -> KoraDB.v1.Role
-	30, // 10: KoraDB.v1.ListKeysResponse.keys:type_name -> KoraDB.v1.KeyInfo
-	0,  // 11: KoraDB.v1.KeyInfo.role:type_name -> KoraDB.v1.Role
-	2,  // 12: KoraDB.v1.KoraDB.PutSchema:input_type -> KoraDB.v1.PutSchemaRequest
-	4,  // 13: KoraDB.v1.KoraDB.ListSchemas:input_type -> KoraDB.v1.ListSchemasRequest
-	7,  // 14: KoraDB.v1.KoraDB.CreateCollection:input_type -> KoraDB.v1.CreateCollectionRequest
-	9,  // 15: KoraDB.v1.KoraDB.ListCollections:input_type -> KoraDB.v1.ListCollectionsRequest
-	12, // 16: KoraDB.v1.KoraDB.Insert:input_type -> KoraDB.v1.InsertRequest
-	14, // 17: KoraDB.v1.KoraDB.Get:input_type -> KoraDB.v1.GetRequest
-	16, // 18: KoraDB.v1.KoraDB.Update:input_type -> KoraDB.v1.UpdateRequest
-	18, // 19: KoraDB.v1.KoraDB.Delete:input_type -> KoraDB.v1.DeleteRequest
-	23, // 20: KoraDB.v1.KoraDB.Query:input_type -> KoraDB.v1.QueryRequest
-	26, // 21: KoraDB.v1.KoraDB.CreateKey:input_type -> KoraDB.v1.CreateKeyRequest
-	28, // 22: KoraDB.v1.KoraDB.ListKeys:input_type -> KoraDB.v1.ListKeysRequest
-	31, // 23: KoraDB.v1.KoraDB.RevokeKey:input_type -> KoraDB.v1.RevokeKeyRequest
-	3,  // 24: KoraDB.v1.KoraDB.PutSchema:output_type -> KoraDB.v1.PutSchemaResponse
-	5,  // 25: KoraDB.v1.KoraDB.ListSchemas:output_type -> KoraDB.v1.ListSchemasResponse
-	8,  // 26: KoraDB.v1.KoraDB.CreateCollection:output_type -> KoraDB.v1.CreateCollectionResponse
-	10, // 27: KoraDB.v1.KoraDB.ListCollections:output_type -> KoraDB.v1.ListCollectionsResponse
-	13, // 28: KoraDB.v1.KoraDB.Insert:output_type -> KoraDB.v1.InsertResponse
-	15, // 29: KoraDB.v1.KoraDB.Get:output_type -> KoraDB.v1.GetResponse
-	17, // 30: KoraDB.v1.KoraDB.Update:output_type -> KoraDB.v1.UpdateResponse
-	19, // 31: KoraDB.v1.KoraDB.Delete:output_type -> KoraDB.v1.DeleteResponse
-	24, // 32: KoraDB.v1.KoraDB.Query:output_type -> KoraDB.v1.QueryResponse
-	27, // 33: KoraDB.v1.KoraDB.CreateKey:output_type -> KoraDB.v1.CreateKeyResponse
-	29, // 34: KoraDB.v1.KoraDB.ListKeys:output_type -> KoraDB.v1.ListKeysResponse
-	32, // 35: KoraDB.v1.KoraDB.RevokeKey:output_type -> KoraDB.v1.RevokeKeyResponse
+var file_kora_db_proto_depIdxs = []int32{
+	6,  // 0: koradb.v1.ListSchemasResponse.schemas:type_name -> koradb.v1.SchemaInfo
+	11, // 1: koradb.v1.ListCollectionsResponse.collections:type_name -> koradb.v1.CollectionInfo
+	21, // 2: koradb.v1.Filter.cmp:type_name -> koradb.v1.Cmp
+	22, // 3: koradb.v1.Filter.and_group:type_name -> koradb.v1.BoolGroup
+	22, // 4: koradb.v1.Filter.or_group:type_name -> koradb.v1.BoolGroup
+	1,  // 5: koradb.v1.Cmp.op:type_name -> koradb.v1.Op
+	20, // 6: koradb.v1.BoolGroup.filters:type_name -> koradb.v1.Filter
+	20, // 7: koradb.v1.QueryRequest.filter:type_name -> koradb.v1.Filter
+	25, // 8: koradb.v1.QueryResponse.results:type_name -> koradb.v1.Document
+	0,  // 9: koradb.v1.CreateKeyRequest.role:type_name -> koradb.v1.Role
+	30, // 10: koradb.v1.ListKeysResponse.keys:type_name -> koradb.v1.KeyInfo
+	0,  // 11: koradb.v1.KeyInfo.role:type_name -> koradb.v1.Role
+	2,  // 12: koradb.v1.KoraDB.PutSchema:input_type -> koradb.v1.PutSchemaRequest
+	4,  // 13: koradb.v1.KoraDB.ListSchemas:input_type -> koradb.v1.ListSchemasRequest
+	7,  // 14: koradb.v1.KoraDB.CreateCollection:input_type -> koradb.v1.CreateCollectionRequest
+	9,  // 15: koradb.v1.KoraDB.ListCollections:input_type -> koradb.v1.ListCollectionsRequest
+	12, // 16: koradb.v1.KoraDB.Insert:input_type -> koradb.v1.InsertRequest
+	14, // 17: koradb.v1.KoraDB.Get:input_type -> koradb.v1.GetRequest
+	16, // 18: koradb.v1.KoraDB.Update:input_type -> koradb.v1.UpdateRequest
+	18, // 19: koradb.v1.KoraDB.Delete:input_type -> koradb.v1.DeleteRequest
+	23, // 20: koradb.v1.KoraDB.Query:input_type -> koradb.v1.QueryRequest
+	26, // 21: koradb.v1.KoraDB.CreateKey:input_type -> koradb.v1.CreateKeyRequest
+	28, // 22: koradb.v1.KoraDB.ListKeys:input_type -> koradb.v1.ListKeysRequest
+	31, // 23: koradb.v1.KoraDB.RevokeKey:input_type -> koradb.v1.RevokeKeyRequest
+	3,  // 24: koradb.v1.KoraDB.PutSchema:output_type -> koradb.v1.PutSchemaResponse
+	5,  // 25: koradb.v1.KoraDB.ListSchemas:output_type -> koradb.v1.ListSchemasResponse
+	8,  // 26: koradb.v1.KoraDB.CreateCollection:output_type -> koradb.v1.CreateCollectionResponse
+	10, // 27: koradb.v1.KoraDB.ListCollections:output_type -> koradb.v1.ListCollectionsResponse
+	13, // 28: koradb.v1.KoraDB.Insert:output_type -> koradb.v1.InsertResponse
+	15, // 29: koradb.v1.KoraDB.Get:output_type -> koradb.v1.GetResponse
+	17, // 30: koradb.v1.KoraDB.Update:output_type -> koradb.v1.UpdateResponse
+	19, // 31: koradb.v1.KoraDB.Delete:output_type -> koradb.v1.DeleteResponse
+	24, // 32: koradb.v1.KoraDB.Query:output_type -> koradb.v1.QueryResponse
+	27, // 33: koradb.v1.KoraDB.CreateKey:output_type -> koradb.v1.CreateKeyResponse
+	29, // 34: koradb.v1.KoraDB.ListKeys:output_type -> koradb.v1.ListKeysResponse
+	32, // 35: koradb.v1.KoraDB.RevokeKey:output_type -> koradb.v1.RevokeKeyResponse
 	24, // [24:36] is the sub-list for method output_type
 	12, // [12:24] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
@@ -1913,12 +1916,12 @@ var file_KoraDB_proto_depIdxs = []int32{
 	0,  // [0:12] is the sub-list for field type_name
 }
 
-func init() { file_KoraDB_proto_init() }
-func file_KoraDB_proto_init() {
-	if File_KoraDB_proto != nil {
+func init() { file_kora_db_proto_init() }
+func file_kora_db_proto_init() {
+	if File_kora_db_proto != nil {
 		return
 	}
-	file_KoraDB_proto_msgTypes[18].OneofWrappers = []any{
+	file_kora_db_proto_msgTypes[18].OneofWrappers = []any{
 		(*Filter_Cmp)(nil),
 		(*Filter_AndGroup)(nil),
 		(*Filter_OrGroup)(nil),
@@ -1927,18 +1930,18 @@ func file_KoraDB_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_KoraDB_proto_rawDesc), len(file_KoraDB_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_kora_db_proto_rawDesc), len(file_kora_db_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_KoraDB_proto_goTypes,
-		DependencyIndexes: file_KoraDB_proto_depIdxs,
-		EnumInfos:         file_KoraDB_proto_enumTypes,
-		MessageInfos:      file_KoraDB_proto_msgTypes,
+		GoTypes:           file_kora_db_proto_goTypes,
+		DependencyIndexes: file_kora_db_proto_depIdxs,
+		EnumInfos:         file_kora_db_proto_enumTypes,
+		MessageInfos:      file_kora_db_proto_msgTypes,
 	}.Build()
-	File_KoraDB_proto = out.File
-	file_KoraDB_proto_goTypes = nil
-	file_KoraDB_proto_depIdxs = nil
+	File_kora_db_proto = out.File
+	file_kora_db_proto_goTypes = nil
+	file_kora_db_proto_depIdxs = nil
 }

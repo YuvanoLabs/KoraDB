@@ -38,8 +38,8 @@ func TestAuthenticateRejectsBadTokens(t *testing.T) {
 	cases := []string{
 		"",
 		"garbage",
-		"pdb_short",
-		"pdb_" + "00000000000000ff" + "_" + "tooShortSecret",
+		"kdb_short",
+		"kdb_" + "00000000000000ff" + "_" + "tooShortSecret",
 		good + "x",         // tampered secret length
 		good[:len(good)-1], // truncated
 	}
@@ -49,7 +49,7 @@ func TestAuthenticateRejectsBadTokens(t *testing.T) {
 		}
 	}
 	// A well-formed token for a non-existent key must also fail.
-	fake := "pdb_" + "0011223344556677" + "_" + repeat("a", 64)
+	fake := "kdb_" + "0011223344556677" + "_" + repeat("a", 64)
 	if _, err := Authenticate(st, fake); err != ErrInvalidToken {
 		t.Fatalf("unknown key: got %v, want ErrInvalidToken", err)
 	}
@@ -66,6 +66,49 @@ func TestRevoke(t *testing.T) {
 	}
 	if _, err := Authenticate(st, token); err != ErrInvalidToken {
 		t.Fatalf("after revoke: got %v, want ErrInvalidToken", err)
+	}
+}
+
+func TestRevokeLastAdminRejected(t *testing.T) {
+	st := tempStore(t)
+	adminToken, adminID, err := CreateKey(st, "admin", RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Revoke(st, adminID); err != ErrLastAdmin {
+		t.Fatalf("revoke last admin = %v, want ErrLastAdmin", err)
+	}
+	if _, err := Authenticate(st, adminToken); err != nil {
+		t.Fatalf("last admin was revoked despite error: %v", err)
+	}
+	if has, err := HasAdminKey(st); err != nil || !has {
+		t.Fatalf("admin key status = %v, %v; want true, nil", has, err)
+	}
+}
+
+func TestRevokeAllowsAnotherAdminToRemain(t *testing.T) {
+	st := tempStore(t)
+	_, firstID, err := CreateKey(st, "admin-one", RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := CreateKey(st, "admin-two", RoleAdmin); err != nil {
+		t.Fatal(err)
+	}
+	if err := Revoke(st, firstID); err != nil {
+		t.Fatalf("revoke one of two admins: %v", err)
+	}
+	if has, err := HasAdminKey(st); err != nil || !has {
+		t.Fatalf("admin key status = %v, %v; want true, nil", has, err)
+	}
+}
+
+func TestCreateKeyRejectsUnsafePrincipalNames(t *testing.T) {
+	st := tempStore(t)
+	for _, name := range []string{"", "   ", "audit\nforgery"} {
+		if _, _, err := CreateKey(st, name, RoleReadOnly); err == nil {
+			t.Fatalf("unsafe name %q was accepted", name)
+		}
 	}
 }
 
@@ -116,3 +159,4 @@ func repeat(s string, n int) string {
 	}
 	return string(out)
 }
+

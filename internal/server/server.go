@@ -9,6 +9,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,6 +24,11 @@ type Server struct {
 	pb.UnimplementedKoraDBServer
 	db *engine.DB
 }
+
+const (
+	maxFilterDepth      = 32
+	maxFilterPredicates = 64
+)
 
 // New returns a gRPC service backed by db.
 func New(db *engine.DB) *Server { return &Server{db: db} }
@@ -125,37 +131,61 @@ func (s *Server) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResp
 // toFilter converts the wire filter AST into the query package's AST. A nil
 // wire filter means "match all".
 func toFilter(f *pb.Filter) (query.Filter, error) {
+	budget := maxFilterPredicates
+	return toFilterWithLimits(f, 1, &budget)
+}
+
+func toFilterWithLimits(f *pb.Filter, depth int, budget *int) (query.Filter, error) {
 	if f == nil {
 		return nil, nil
 	}
+	if depth > maxFilterDepth {
+		return nil, fmt.Errorf("query: filter exceeds maximum depth of %d", maxFilterDepth)
+	}
 	switch node := f.GetNode().(type) {
 	case *pb.Filter_Cmp:
+		if node.Cmp == nil {
+			return nil, errors.New("query: comparison filter is required")
+		}
+		*budget--
+		if *budget < 0 {
+			return nil, fmt.Errorf("query: filter exceeds maximum predicate count of %d", maxFilterPredicates)
+		}
 		op, err := toOp(node.Cmp.GetOp())
 		if err != nil {
 			return nil, err
 		}
 		return query.Cmp{Field: node.Cmp.GetField(), Op: op, Value: node.Cmp.GetValue()}, nil
 	case *pb.Filter_AndGroup:
-		subs, err := toFilters(node.AndGroup.GetFilters())
+		if node.AndGroup == nil || len(node.AndGroup.GetFilters()) == 0 {
+			return nil, errors.New("query: AND group must contain at least one filter")
+		}
+		subs, err := toFiltersWithLimits(node.AndGroup.GetFilters(), depth+1, budget)
 		if err != nil {
 			return nil, err
 		}
 		return query.And{Filters: subs}, nil
 	case *pb.Filter_OrGroup:
-		subs, err := toFilters(node.OrGroup.GetFilters())
+		if node.OrGroup == nil || len(node.OrGroup.GetFilters()) == 0 {
+			return nil, errors.New("query: OR group must contain at least one filter")
+		}
+		subs, err := toFiltersWithLimits(node.OrGroup.GetFilters(), depth+1, budget)
 		if err != nil {
 			return nil, err
 		}
 		return query.Or{Filters: subs}, nil
 	default:
-		return nil, nil
+		return nil, errors.New("query: filter node is required")
 	}
 }
 
-func toFilters(in []*pb.Filter) ([]query.Filter, error) {
+func toFiltersWithLimits(in []*pb.Filter, depth int, budget *int) ([]query.Filter, error) {
 	out := make([]query.Filter, 0, len(in))
 	for _, f := range in {
-		qf, err := toFilter(f)
+		if f == nil {
+			return nil, errors.New("query: filter group contains an empty filter")
+		}
+		qf, err := toFilterWithLimits(f, depth, budget)
 		if err != nil {
 			return nil, err
 		}
@@ -186,6 +216,7 @@ func toOp(op pb.Op) (query.Op, error) {
 // toStatus maps engine errors to gRPC status codes so clients get meaningful,
 // language-agnostic error categories.
 func toStatus(err error) error {
+	var resultLimit *query.ResultLimitError
 	switch {
 	case err == nil:
 		return nil
@@ -193,6 +224,8 @@ func toStatus(err error) error {
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, engine.ErrExists), errors.Is(err, engine.ErrDuplicateKey):
 		return status.Error(codes.AlreadyExists, err.Error())
+	case errors.As(err, &resultLimit):
+		return status.Error(codes.ResourceExhausted, err.Error())
 	default:
 		// Most remaining engine errors are caused by bad client input (invalid
 		// .proto, malformed JSON, unknown field/collection).

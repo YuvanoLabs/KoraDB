@@ -1,16 +1,16 @@
 syntax = "proto3";
 
-// PRE-RELEASE NAMESPACE. The public release gate requires migration to
-// the approved company-qualified package recorded in product.identity.yaml.
-// Regenerate all committed stubs as one coordinated change after the final
-// product name, repository, and legal owner are approved.
+// PRE-RELEASE NAMESPACE. The public release gate requires migration to the
+// approved company-qualified package recorded in product.identity.yaml.
+// Regenerate all committed stubs as one coordinated change after canonical
+// package ownership and legal clearance are complete.
 //
 // KoraDB.v1 is the wire contract for the KoraDB gRPC server. It is a FIXED
 // schema: documents themselves are carried as JSON strings, because each
 // collection has its own user-defined message type that the server stores as
 // protobuf bytes internally. This keeps one stable service surface while
 // supporting arbitrarily many user schemas.
-package KoraDB.v1;
+package koradb.v1;
 
 option go_package = "KoraDB/api/gen/KoraDBv1;KoraDBv1";
 

@@ -3,7 +3,9 @@
 # zero external/runtime dependencies and needs nothing installed on the target.
 
 param(
-  [switch]$Development
+  [switch]$Development,
+  [string]$Version = "dev",
+  [string]$Commit = "unknown"
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,6 +23,8 @@ if ($Development) {
 
 $go = if (Get-Command go -ErrorAction SilentlyContinue) { "go" } else { "C:\Program Files\Go\bin\go.exe" }
 $env:CGO_ENABLED = "0"
+$buildTime = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+$ldflags = "-X KoraDB/internal/buildinfo.Version=$Version -X KoraDB/internal/buildinfo.Commit=$Commit -X KoraDB/internal/buildinfo.BuildTime=$buildTime"
 
 $targets = @(
   @{os = "linux";   arch = "amd64"; ext = "" },
@@ -31,12 +35,22 @@ $targets = @(
 )
 
 New-Item -ItemType Directory -Force -Path dist | Out-Null
+$artifacts = @()
 foreach ($t in $targets) {
   $env:GOOS = $t.os; $env:GOARCH = $t.arch
   foreach ($cmd in @("KoraDB-server", "KoraDB")) {
     $out = "dist\$cmd-$($t.os)-$($t.arch)$($t.ext)"
-    & $go build -o $out "./cmd/$cmd"
+    & $go build -ldflags $ldflags -o $out "./cmd/$cmd"
+    $artifacts += $out
     Write-Host "built $out"
   }
 }
-Write-Host "`nAll binaries are static (CGO_ENABLED=0) — copy one to the target and run it."
+
+$checksums = foreach ($artifact in $artifacts) {
+  $hash = Get-FileHash -Algorithm SHA256 -LiteralPath $artifact
+  "{0}  {1}" -f $hash.Hash.ToLowerInvariant(), [System.IO.Path]::GetFileName($artifact)
+}
+$checksumPath = "dist\checksums.txt"
+$checksums | Sort-Object | Set-Content -LiteralPath $checksumPath -NoNewline:$false
+Write-Host "wrote $checksumPath"
+Write-Host "`nAll binaries are static (CGO_ENABLED=0) — verify checksums before copying one to the target."

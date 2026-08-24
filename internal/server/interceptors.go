@@ -35,6 +35,12 @@ type holderCtxKey struct{}
 // unmapped method) yields PermissionDenied.
 func AuthInterceptor(store *storage.Store) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		// Health is intentionally unauthenticated so orchestrators can check
+		// readiness without receiving a database credential. It exposes only a
+		// serving status and is registered after the database opens successfully.
+		if isPublicHealthMethod(info.FullMethod) {
+			return handler(ctx, req)
+		}
 		token, err := bearerToken(ctx)
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, "missing or malformed authorization token")

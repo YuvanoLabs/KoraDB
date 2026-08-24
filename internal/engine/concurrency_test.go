@@ -49,16 +49,14 @@ func TestConcurrentInsertAndSchemaEvolve(t *testing.T) {
 			}(w)
 		}
 
-		// Schema churn: re-register (evolve) the same schema repeatedly.
+		// Schema churn: re-register a compatible evolution repeatedly. Once the
+		// field in userV2 exists, rolling back to userV1 would be an intentional
+		// schema-compatibility violation.
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for i := 0; i < 20; i++ {
-				src := userV1
-				if i%2 == 1 {
-					src = userV2
-				}
-				if _, err := db.RegisterSchema(context.Background(), "user.proto", src); err != nil {
+				if _, err := db.RegisterSchema(context.Background(), "user.proto", userV2); err != nil {
 					t.Errorf("register: %v", err)
 					return
 				}

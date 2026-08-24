@@ -10,11 +10,13 @@
 package engine
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -85,6 +87,14 @@ func Open(path string) (*DB, error) {
 // Close releases the underlying database file.
 func (db *DB) Close() error { return db.store.Close() }
 
+// Backup writes a consistent snapshot of this embedded database to w. It does
+// not close the database or block readers for the duration of the copy.
+func (db *DB) Backup(w io.Writer) error { return db.store.Snapshot(w) }
+
+// Verify checks the underlying storage structure without mutating the
+// database. It does not validate every document against its schema.
+func (db *DB) Verify() error { return db.store.Verify() }
+
 // Registry exposes the schema registry so callers can register/evolve schemas.
 func (db *DB) Registry() *schema.Registry { return db.reg }
 
@@ -121,6 +131,9 @@ func (db *DB) CreateCollection(name, messageType string, opts *CollectionOptions
 		}
 		if kfd.IsList() || kfd.IsMap() || kfd.Kind() == protoreflect.MessageKind || kfd.Kind() == protoreflect.GroupKind {
 			return nil, fmt.Errorf("engine: key field %q must be a scalar (got %s)", opts.KeyField, kfd.Kind())
+		}
+		if !primaryKeyKindSupported(kfd.Kind()) {
+			return nil, fmt.Errorf("engine: key field %q has unsupported kind %s", opts.KeyField, kfd.Kind())
 		}
 		meta.KeyKind = KeyField
 		meta.KeyField = opts.KeyField
@@ -301,6 +314,15 @@ func (db *DB) Update(coll, id string, jsonDoc []byte) error {
 		if err != nil {
 			return err
 		}
+		if meta.KeyKind == KeyField {
+			newKey, _, err := db.deriveKey(tx, meta, newMsg)
+			if err != nil {
+				return err
+			}
+			if !bytes.Equal(key, newKey) {
+				return fmt.Errorf("engine: update of %q in %q changes immutable key field %q", id, coll, meta.KeyField)
+			}
+		}
 		wire, err := proto.Marshal(newMsg)
 		if err != nil {
 			return err
@@ -456,17 +478,92 @@ func (db *DB) encodeKey(meta *CollectionMeta, id string) ([]byte, error) {
 		return nil, err
 	}
 	fd := md.Fields().ByName(protoreflect.Name(meta.KeyField))
+	if fd == nil {
+		return nil, fmt.Errorf("engine: collection %q key field %q is missing from message %q", meta.Name, meta.KeyField, meta.MessageType)
+	}
 	switch fd.Kind() {
-	case protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Uint32Kind,
-		protoreflect.Uint64Kind, protoreflect.Sint32Kind, protoreflect.Sint64Kind:
-		n, err := strconv.ParseUint(id, 10, 64)
+	case protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Sint32Kind,
+		protoreflect.Sint64Kind, protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
+		n, err := strconv.ParseInt(id, 10, primaryKeyBitSize(fd.Kind()))
 		if err != nil {
-			return nil, fmt.Errorf("engine: invalid integer key %q: %w", id, err)
+			return nil, fmt.Errorf("engine: invalid signed integer key %q: %w", id, err)
+		}
+		return encodeUint(uint64(n)), nil
+	case protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
+		n, err := strconv.ParseUint(id, 10, primaryKeyBitSize(fd.Kind()))
+		if err != nil {
+			return nil, fmt.Errorf("engine: invalid unsigned integer key %q: %w", id, err)
 		}
 		return encodeUint(n), nil
-	default:
-		// Treat as string-valued key.
+	case protoreflect.BoolKind:
+		v, err := strconv.ParseBool(id)
+		if err != nil {
+			return nil, fmt.Errorf("engine: invalid bool key %q: %w", id, err)
+		}
+		return []byte(strconv.FormatBool(v)), nil
+	case protoreflect.StringKind:
 		return []byte(id), nil
+	default:
+		return nil, fmt.Errorf("engine: key field %q has unsupported kind %s", meta.KeyField, fd.Kind())
+	}
+}
+
+// IDFromStorageKey renders a raw storage key as the canonical public document
+// ID. Query results use this so their IDs can be passed directly to Get,
+// Update, and Delete.
+func (db *DB) IDFromStorageKey(meta *CollectionMeta, key []byte) (string, error) {
+	if meta.KeyKind == KeyAuto {
+		if len(key) != 8 {
+			return "", fmt.Errorf("engine: invalid auto key length %d", len(key))
+		}
+		return strconv.FormatUint(binary.BigEndian.Uint64(key), 10), nil
+	}
+	md, err := db.reg.MessageDescriptor(meta.MessageType)
+	if err != nil {
+		return "", err
+	}
+	fd := md.Fields().ByName(protoreflect.Name(meta.KeyField))
+	if fd == nil {
+		return "", fmt.Errorf("engine: collection %q key field %q is missing from message %q", meta.Name, meta.KeyField, meta.MessageType)
+	}
+	switch fd.Kind() {
+	case protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Sint32Kind,
+		protoreflect.Sint64Kind, protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
+		if len(key) != 8 {
+			return "", fmt.Errorf("engine: invalid signed integer key length %d", len(key))
+		}
+		return strconv.FormatInt(int64(binary.BigEndian.Uint64(key)), 10), nil
+	case protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
+		if len(key) != 8 {
+			return "", fmt.Errorf("engine: invalid unsigned integer key length %d", len(key))
+		}
+		return strconv.FormatUint(binary.BigEndian.Uint64(key), 10), nil
+	case protoreflect.BoolKind, protoreflect.StringKind:
+		return string(key), nil
+	default:
+		return "", fmt.Errorf("engine: key field %q has unsupported kind %s", meta.KeyField, fd.Kind())
+	}
+}
+
+func primaryKeyKindSupported(kind protoreflect.Kind) bool {
+	switch kind {
+	case protoreflect.StringKind, protoreflect.BoolKind,
+		protoreflect.Int32Kind, protoreflect.Int64Kind, protoreflect.Sint32Kind, protoreflect.Sint64Kind,
+		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind,
+		protoreflect.Uint32Kind, protoreflect.Uint64Kind, protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
+		return true
+	default:
+		return false
+	}
+}
+
+func primaryKeyBitSize(kind protoreflect.Kind) int {
+	switch kind {
+	case protoreflect.Int32Kind, protoreflect.Sint32Kind, protoreflect.Sfixed32Kind,
+		protoreflect.Uint32Kind, protoreflect.Fixed32Kind:
+		return 32
+	default:
+		return 64
 	}
 }
 

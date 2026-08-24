@@ -96,7 +96,7 @@ func TestAuthDenials(t *testing.T) {
 	adminTok, _, _ := auth.CreateKey(db.Store(), "admin", auth.RoleAdmin)
 	roTok, _, _ := auth.CreateKey(db.Store(), "reader", auth.RoleReadOnly)
 
-	// Admin sets up schema + collection (privileged) — should succeed.
+	// Admin sets up schema + collection (privileged) ? should succeed.
 	if _, err := client.PutSchema(withToken(adminTok), &pb.PutSchemaRequest{Name: "user.proto", ProtoSource: userProto}); err != nil {
 		t.Fatalf("admin PutSchema: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestAuthDenials(t *testing.T) {
 	assertCode(t, "no token", err, codes.Unauthenticated)
 
 	// 2. Garbage token -> Unauthenticated.
-	_, err = client.Get(withToken("pdb_deadbeefdeadbeef_"+repeat64()), &pb.GetRequest{Collection: "users", Id: "x"})
+	_, err = client.Get(withToken("kdb_deadbeefdeadbeef_"+repeat64()), &pb.GetRequest{Collection: "users", Id: "x"})
 	assertCode(t, "bad token", err, codes.Unauthenticated)
 
 	// 3. Readonly principal calling Insert (a write) -> PermissionDenied.
@@ -193,3 +193,4 @@ func repeat64() string {
 	}
 	return string(b)
 }
+

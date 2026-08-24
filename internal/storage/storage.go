@@ -15,6 +15,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
@@ -41,6 +42,31 @@ func Open(path string) (*Store, error) {
 // Close flushes and releases the database file.
 func (s *Store) Close() error {
 	return s.db.Close()
+}
+
+// Snapshot writes a transactionally consistent bbolt database image to w. The
+// caller owns durable placement, encryption, retention, and restore handling.
+// Readers and the single writer may continue while the snapshot is generated.
+func (s *Store) Snapshot(w io.Writer) error {
+	if w == nil {
+		return errors.New("storage: snapshot writer is nil")
+	}
+	return s.db.View(func(tx *bolt.Tx) error {
+		_, err := tx.WriteTo(w)
+		return err
+	})
+}
+
+// Verify checks bbolt's internal page and freelist invariants against a stable
+// read snapshot. It verifies structural integrity, not application-level
+// protobuf schema or document semantics.
+func (s *Store) Verify() error {
+	return s.db.View(func(tx *bolt.Tx) error {
+		for err := range tx.Check() {
+			return fmt.Errorf("storage: integrity check failed: %w", err)
+		}
+		return nil
+	})
 }
 
 // Path returns the on-disk path of the database file.

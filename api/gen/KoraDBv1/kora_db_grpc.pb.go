@@ -2,8 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             (unknown)
-// source: KoraDB.proto
+// source: kora_db.proto
 
+// PRE-RELEASE NAMESPACE. The public release gate requires migration to the
+// approved company-qualified package recorded in product.identity.yaml.
+// Regenerate all committed stubs as one coordinated change after canonical
+// package ownership and legal clearance are complete.
+//
 // KoraDB.v1 is the wire contract for the KoraDB gRPC server. It is a FIXED
 // schema: documents themselves are carried as JSON strings, because each
 // collection has its own user-defined message type that the server stores as
@@ -25,18 +30,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	KoraDB_PutSchema_FullMethodName        = "/KoraDB.v1.KoraDB/PutSchema"
-	KoraDB_ListSchemas_FullMethodName      = "/KoraDB.v1.KoraDB/ListSchemas"
-	KoraDB_CreateCollection_FullMethodName = "/KoraDB.v1.KoraDB/CreateCollection"
-	KoraDB_ListCollections_FullMethodName  = "/KoraDB.v1.KoraDB/ListCollections"
-	KoraDB_Insert_FullMethodName           = "/KoraDB.v1.KoraDB/Insert"
-	KoraDB_Get_FullMethodName              = "/KoraDB.v1.KoraDB/Get"
-	KoraDB_Update_FullMethodName           = "/KoraDB.v1.KoraDB/Update"
-	KoraDB_Delete_FullMethodName           = "/KoraDB.v1.KoraDB/Delete"
-	KoraDB_Query_FullMethodName            = "/KoraDB.v1.KoraDB/Query"
-	KoraDB_CreateKey_FullMethodName        = "/KoraDB.v1.KoraDB/CreateKey"
-	KoraDB_ListKeys_FullMethodName         = "/KoraDB.v1.KoraDB/ListKeys"
-	KoraDB_RevokeKey_FullMethodName        = "/KoraDB.v1.KoraDB/RevokeKey"
+	KoraDB_PutSchema_FullMethodName        = "/koradb.v1.KoraDB/PutSchema"
+	KoraDB_ListSchemas_FullMethodName      = "/koradb.v1.KoraDB/ListSchemas"
+	KoraDB_CreateCollection_FullMethodName = "/koradb.v1.KoraDB/CreateCollection"
+	KoraDB_ListCollections_FullMethodName  = "/koradb.v1.KoraDB/ListCollections"
+	KoraDB_Insert_FullMethodName           = "/koradb.v1.KoraDB/Insert"
+	KoraDB_Get_FullMethodName              = "/koradb.v1.KoraDB/Get"
+	KoraDB_Update_FullMethodName           = "/koradb.v1.KoraDB/Update"
+	KoraDB_Delete_FullMethodName           = "/koradb.v1.KoraDB/Delete"
+	KoraDB_Query_FullMethodName            = "/koradb.v1.KoraDB/Query"
+	KoraDB_CreateKey_FullMethodName        = "/koradb.v1.KoraDB/CreateKey"
+	KoraDB_ListKeys_FullMethodName         = "/koradb.v1.KoraDB/ListKeys"
+	KoraDB_RevokeKey_FullMethodName        = "/koradb.v1.KoraDB/RevokeKey"
 )
 
 // KoraDBClient is the client API for KoraDB service.
@@ -65,15 +70,15 @@ type KoraDBClient interface {
 	RevokeKey(ctx context.Context, in *RevokeKeyRequest, opts ...grpc.CallOption) (*RevokeKeyResponse, error)
 }
 
-type KoraDBClient struct {
+type koraDBClient struct {
 	cc grpc.ClientConnInterface
 }
 
 func NewKoraDBClient(cc grpc.ClientConnInterface) KoraDBClient {
-	return &KoraDBClient{cc}
+	return &koraDBClient{cc}
 }
 
-func (c *KoraDBClient) PutSchema(ctx context.Context, in *PutSchemaRequest, opts ...grpc.CallOption) (*PutSchemaResponse, error) {
+func (c *koraDBClient) PutSchema(ctx context.Context, in *PutSchemaRequest, opts ...grpc.CallOption) (*PutSchemaResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PutSchemaResponse)
 	err := c.cc.Invoke(ctx, KoraDB_PutSchema_FullMethodName, in, out, cOpts...)
@@ -83,7 +88,7 @@ func (c *KoraDBClient) PutSchema(ctx context.Context, in *PutSchemaRequest, opts
 	return out, nil
 }
 
-func (c *KoraDBClient) ListSchemas(ctx context.Context, in *ListSchemasRequest, opts ...grpc.CallOption) (*ListSchemasResponse, error) {
+func (c *koraDBClient) ListSchemas(ctx context.Context, in *ListSchemasRequest, opts ...grpc.CallOption) (*ListSchemasResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListSchemasResponse)
 	err := c.cc.Invoke(ctx, KoraDB_ListSchemas_FullMethodName, in, out, cOpts...)
@@ -93,7 +98,7 @@ func (c *KoraDBClient) ListSchemas(ctx context.Context, in *ListSchemasRequest, 
 	return out, nil
 }
 
-func (c *KoraDBClient) CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CreateCollectionResponse, error) {
+func (c *koraDBClient) CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CreateCollectionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateCollectionResponse)
 	err := c.cc.Invoke(ctx, KoraDB_CreateCollection_FullMethodName, in, out, cOpts...)
@@ -103,7 +108,7 @@ func (c *KoraDBClient) CreateCollection(ctx context.Context, in *CreateCollectio
 	return out, nil
 }
 
-func (c *KoraDBClient) ListCollections(ctx context.Context, in *ListCollectionsRequest, opts ...grpc.CallOption) (*ListCollectionsResponse, error) {
+func (c *koraDBClient) ListCollections(ctx context.Context, in *ListCollectionsRequest, opts ...grpc.CallOption) (*ListCollectionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListCollectionsResponse)
 	err := c.cc.Invoke(ctx, KoraDB_ListCollections_FullMethodName, in, out, cOpts...)
@@ -113,7 +118,7 @@ func (c *KoraDBClient) ListCollections(ctx context.Context, in *ListCollectionsR
 	return out, nil
 }
 
-func (c *KoraDBClient) Insert(ctx context.Context, in *InsertRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
+func (c *koraDBClient) Insert(ctx context.Context, in *InsertRequest, opts ...grpc.CallOption) (*InsertResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InsertResponse)
 	err := c.cc.Invoke(ctx, KoraDB_Insert_FullMethodName, in, out, cOpts...)
@@ -123,7 +128,7 @@ func (c *KoraDBClient) Insert(ctx context.Context, in *InsertRequest, opts ...gr
 	return out, nil
 }
 
-func (c *KoraDBClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+func (c *koraDBClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetResponse)
 	err := c.cc.Invoke(ctx, KoraDB_Get_FullMethodName, in, out, cOpts...)
@@ -133,7 +138,7 @@ func (c *KoraDBClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.Cal
 	return out, nil
 }
 
-func (c *KoraDBClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
+func (c *koraDBClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateResponse)
 	err := c.cc.Invoke(ctx, KoraDB_Update_FullMethodName, in, out, cOpts...)
@@ -143,7 +148,7 @@ func (c *KoraDBClient) Update(ctx context.Context, in *UpdateRequest, opts ...gr
 	return out, nil
 }
 
-func (c *KoraDBClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+func (c *koraDBClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteResponse)
 	err := c.cc.Invoke(ctx, KoraDB_Delete_FullMethodName, in, out, cOpts...)
@@ -153,7 +158,7 @@ func (c *KoraDBClient) Delete(ctx context.Context, in *DeleteRequest, opts ...gr
 	return out, nil
 }
 
-func (c *KoraDBClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
+func (c *koraDBClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryResponse)
 	err := c.cc.Invoke(ctx, KoraDB_Query_FullMethodName, in, out, cOpts...)
@@ -163,7 +168,7 @@ func (c *KoraDBClient) Query(ctx context.Context, in *QueryRequest, opts ...grpc
 	return out, nil
 }
 
-func (c *KoraDBClient) CreateKey(ctx context.Context, in *CreateKeyRequest, opts ...grpc.CallOption) (*CreateKeyResponse, error) {
+func (c *koraDBClient) CreateKey(ctx context.Context, in *CreateKeyRequest, opts ...grpc.CallOption) (*CreateKeyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateKeyResponse)
 	err := c.cc.Invoke(ctx, KoraDB_CreateKey_FullMethodName, in, out, cOpts...)
@@ -173,7 +178,7 @@ func (c *KoraDBClient) CreateKey(ctx context.Context, in *CreateKeyRequest, opts
 	return out, nil
 }
 
-func (c *KoraDBClient) ListKeys(ctx context.Context, in *ListKeysRequest, opts ...grpc.CallOption) (*ListKeysResponse, error) {
+func (c *koraDBClient) ListKeys(ctx context.Context, in *ListKeysRequest, opts ...grpc.CallOption) (*ListKeysResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListKeysResponse)
 	err := c.cc.Invoke(ctx, KoraDB_ListKeys_FullMethodName, in, out, cOpts...)
@@ -183,7 +188,7 @@ func (c *KoraDBClient) ListKeys(ctx context.Context, in *ListKeysRequest, opts .
 	return out, nil
 }
 
-func (c *KoraDBClient) RevokeKey(ctx context.Context, in *RevokeKeyRequest, opts ...grpc.CallOption) (*RevokeKeyResponse, error) {
+func (c *koraDBClient) RevokeKey(ctx context.Context, in *RevokeKeyRequest, opts ...grpc.CallOption) (*RevokeKeyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RevokeKeyResponse)
 	err := c.cc.Invoke(ctx, KoraDB_RevokeKey_FullMethodName, in, out, cOpts...)
@@ -264,7 +269,7 @@ func (UnimplementedKoraDBServer) RevokeKey(context.Context, *RevokeKeyRequest) (
 	return nil, status.Error(codes.Unimplemented, "method RevokeKey not implemented")
 }
 func (UnimplementedKoraDBServer) mustEmbedUnimplementedKoraDBServer() {}
-func (UnimplementedKoraDBServer) testEmbeddedByValue()                 {}
+func (UnimplementedKoraDBServer) testEmbeddedByValue()                {}
 
 // UnsafeKoraDBServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to KoraDBServer will
@@ -504,7 +509,7 @@ func _KoraDB_RevokeKey_Handler(srv interface{}, ctx context.Context, dec func(in
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var KoraDB_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "KoraDB.v1.KoraDB",
+	ServiceName: "koradb.v1.KoraDB",
 	HandlerType: (*KoraDBServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -557,5 +562,5 @@ var KoraDB_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "KoraDB.proto",
+	Metadata: "kora_db.proto",
 }

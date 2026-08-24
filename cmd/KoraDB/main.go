@@ -16,8 +16,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"KoraDB/internal/buildinfo"
 	"KoraDB/internal/query"
 )
 
@@ -87,6 +89,13 @@ func run(args []string) error {
 		usage()
 		return nil
 	}
+	if rest[0] == "version" {
+		if len(rest) != 1 {
+			return fmt.Errorf("usage: version")
+		}
+		fmt.Println(buildinfo.String())
+		return nil
+	}
 
 	tlsCfg, err := clientTLS(tlsCA, tlsServerName, tlsSkipVerify)
 	if err != nil {
@@ -107,8 +116,14 @@ func run(args []string) error {
 		return cmdInsert(be, rest[1:])
 	case "get":
 		return cmdGet(be, rest[1:])
+	case "update":
+		return cmdUpdate(be, rest[1:])
 	case "delete":
 		return cmdDelete(be, rest[1:])
+	case "backup":
+		return cmdBackup(be, rest[1:])
+	case "verify":
+		return cmdVerify(be, rest[1:])
 	case "query":
 		return cmdQuery(be, rest[1:])
 	case "key":
@@ -125,13 +140,16 @@ func run(args []string) error {
 // the embedded file backend.
 func openBackend(dbPath, serverAddr, token string, tlsCfg *tls.Config) (backend, error) {
 	if serverAddr != "" {
+		if token != "" && tlsCfg == nil {
+			return nil, fmt.Errorf("refusing to send an API token without TLS: provide --tls-ca, --tls-server-name, or --tls-skip-verify for development")
+		}
 		return openRemote(serverAddr, token, tlsCfg)
 	}
 	return openEmbedded(dbPath)
 }
 
-// clientTLS builds the client TLS config from flags. Returns nil (plaintext)
-// when no TLS flag is given.
+// clientTLS builds the client TLS config from flags. It returns nil (plaintext)
+// only for unauthenticated development connections.
 func clientTLS(caFile, serverName string, skipVerify bool) (*tls.Config, error) {
 	if caFile == "" && serverName == "" && !skipVerify {
 		return nil, nil
@@ -262,6 +280,25 @@ func cmdGet(be backend, args []string) error {
 	return nil
 }
 
+func cmdUpdate(be backend, args []string) error {
+	if len(args) != 3 {
+		return fmt.Errorf("usage: update <collection> <id> <json>  (use - to read JSON from stdin)")
+	}
+	coll, id, doc := args[0], args[1], args[2]
+	if doc == "-" {
+		b, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return err
+		}
+		doc = string(b)
+	}
+	if err := be.Update(coll, id, doc); err != nil {
+		return err
+	}
+	fmt.Println("updated")
+	return nil
+}
+
 func cmdDelete(be backend, args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("usage: delete <collection> <id>")
@@ -270,6 +307,58 @@ func cmdDelete(be backend, args []string) error {
 		return err
 	}
 	fmt.Println("deleted")
+	return nil
+}
+
+func cmdBackup(be backend, args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("usage: backup <output.db>")
+	}
+	output := args[0]
+	if _, err := os.Lstat(output); err == nil {
+		return fmt.Errorf("refusing to overwrite existing backup %q", output)
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("inspect backup destination %q: %w", output, err)
+	}
+
+	dir := filepath.Dir(output)
+	tmp, err := os.CreateTemp(dir, ".KoraDB-backup-*")
+	if err != nil {
+		return fmt.Errorf("create backup file: %w", err)
+	}
+	tmpName := tmp.Name()
+	committed := false
+	defer func() {
+		tmp.Close()
+		if !committed {
+			_ = os.Remove(tmpName)
+		}
+	}()
+	if err := tmp.Chmod(0o600); err != nil {
+		return fmt.Errorf("secure backup file: %w", err)
+	}
+	if err := be.Backup(tmp); err != nil {
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("finalize backup: %w", err)
+	}
+	if err := os.Rename(tmpName, output); err != nil {
+		return fmt.Errorf("publish backup %q: %w", output, err)
+	}
+	committed = true
+	fmt.Printf("backup written to %s\n", output)
+	return nil
+}
+
+func cmdVerify(be backend, args []string) error {
+	if len(args) != 0 {
+		return fmt.Errorf("usage: verify")
+	}
+	if err := be.Verify(); err != nil {
+		return err
+	}
+	fmt.Println("storage integrity verified")
 	return nil
 }
 
@@ -360,7 +449,7 @@ By default operates on a local database file (--db, default KoraDB.db).
 With --server, sends commands to a KoraDB-server over gRPC instead.
 
 Remote flags:
-  --token <token>          API token (or set KoraDB_TOKEN)
+  --token <token>          API token (or set KoraDB_TOKEN; requires TLS)
   --tls-ca <file>          trust this CA for the server's TLS cert
   --tls-server-name <name> override the TLS name to verify
   --tls-skip-verify        DANGER: skip TLS verification (dev only)
@@ -373,7 +462,12 @@ Commands:
   collection list                         list collections
   insert <collection> <json>              insert a document (- reads stdin)
   get <collection> <id>                   fetch a document by id
+  update <collection> <id> <json>         replace a document (- reads stdin)
   delete <collection> <id>                delete a document
+  backup <output.db>                       write a consistent embedded snapshot (no overwrite)
+  verify                                   check embedded storage integrity
+  version                                  print build identity
+  verify                                   check embedded storage integrity
   query <collection> <field> <op> <value> query (op: == != > >= < <=)
   key create <name> <role>                create an API key (admin); role: readonly|readwrite|admin
   key list                                list API keys (admin)

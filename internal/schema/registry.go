@@ -12,10 +12,13 @@ package schema
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/bufbuild/protocompile"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -31,13 +34,20 @@ import (
 // marks it as reserved; user collections never use this name.
 var schemaBucket = []byte("__schemas__")
 
+// schemaHistoryBucket stores immutable records for every schema version
+// accepted after version history was introduced. schemaBucket remains the
+// active-version catalog used when opening a database.
+var schemaHistoryBucket = []byte("__schema_history__")
+
 // record is what we persist for each registered schema: enough to rebuild the
 // descriptors on restart and to show the user what they registered.
 type record struct {
-	Name    string `json:"name"`    // logical schema name (the .proto filename)
-	Source  string `json:"source"`  // original .proto text, kept for inspection
-	Version int    `json:"version"` // bumped each time this name is re-registered
-	FDSet   []byte `json:"fdset"`   // serialized FileDescriptorSet (with deps)
+	Name        string `json:"name"`        // logical schema name (the .proto filename)
+	Source      string `json:"source"`      // original .proto text, kept for inspection
+	Version     int    `json:"version"`     // bumped each time this name is re-registered
+	FDSet       []byte `json:"fdset"`       // serialized FileDescriptorSet (with deps)
+	Digest      string `json:"digest"`      // SHA-256 of FDSet for reproducibility
+	CreatedUnix int64  `json:"createdUnix"` // acceptance time; zero for legacy records
 }
 
 // Registry compiles, stores, and serves protobuf schemas. It keeps an in-memory
@@ -115,13 +125,25 @@ func (r *Registry) loadFromStore() error {
 //
 // It returns the new version number for the schema.
 func (r *Registry) Register(ctx context.Context, name, protoSource string) (int, error) {
+	// Registration is serialized so user-schema imports, compatibility checks,
+	// version allocation, persistence, and activation all see one coherent
+	// catalog state.
+	r.regMu.Lock()
+	defer r.regMu.Unlock()
+
+	sources, err := r.activeSources()
+	if err != nil {
+		return 0, err
+	}
+	sources[name] = protoSource
+
 	// Compile with standard imports available so schemas may import the
 	// well-known types (timestamp.proto, etc.) without shipping those files.
+	// The active user-schema catalog is included too, enabling imports by their
+	// registered logical name while preserving the exact source in the catalog.
 	compiler := protocompile.Compiler{
 		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
-			Accessor: protocompile.SourceAccessorFromMap(map[string]string{
-				name: protoSource,
-			}),
+			Accessor: protocompile.SourceAccessorFromMap(sources),
 		}),
 	}
 	compiled, err := compiler.Compile(ctx, name)
@@ -142,11 +164,26 @@ func (r *Registry) Register(ctx context.Context, name, protoSource string) (int,
 		return 0, fmt.Errorf("schema %q: encode descriptors: %w", name, err)
 	}
 
-	// Persist outside r.mu (see regMu doc): never hold r.mu across a bbolt txn.
-	r.regMu.Lock()
-	defer r.regMu.Unlock()
+	r.mu.RLock()
+	candidateProtos := cloneFileProtos(r.fileProtos)
+	activeFiles := r.files
+	r.mu.RUnlock()
+	_, replacesActiveSchema := candidateProtos[name]
+	for path, fp := range collected {
+		candidateProtos[path] = fp
+	}
+	candidateFiles, err := buildFiles(candidateProtos)
+	if err != nil {
+		return 0, err
+	}
+	if replacesActiveSchema {
+		if err := ensureFileCompatible(activeFiles, candidateFiles, name); err != nil {
+			return 0, err
+		}
+	}
 
-	// Determine the next version and persist the record.
+	// Determine the next version and persist only after the complete candidate
+	// descriptor set has been validated.
 	version := 1
 	if err := r.store.View(func(tx *storage.Txn) error {
 		v, err := tx.Get(schemaBucket, []byte(name))
@@ -165,41 +202,62 @@ func (r *Registry) Register(ctx context.Context, name, protoSource string) (int,
 		return 0, err
 	}
 
-	rec := record{Name: name, Source: protoSource, Version: version, FDSet: fdsetBytes}
+	rec := record{
+		Name:        name,
+		Source:      protoSource,
+		Version:     version,
+		FDSet:       fdsetBytes,
+		Digest:      descriptorDigest(fdsetBytes),
+		CreatedUnix: time.Now().UTC().Unix(),
+	}
 	recBytes, err := json.Marshal(rec)
 	if err != nil {
 		return 0, err
 	}
 	if err := r.store.Update(func(tx *storage.Txn) error {
-		return tx.Put(schemaBucket, []byte(name), recBytes)
+		if err := tx.Put(schemaBucket, []byte(name), recBytes); err != nil {
+			return err
+		}
+		return tx.Put(schemaHistoryBucket, schemaHistoryKey(name, version), recBytes)
 	}); err != nil {
 		return 0, err
 	}
 
-	// Merge into the in-memory descriptor view and rebuild. Hold r.mu only for
-	// this in-memory work — no bbolt transaction is opened here.
+	// Activation cannot fail: candidateFiles was built before the durable commit.
+	// Hold r.mu only for the pointer swap; no bbolt transaction is opened here.
 	r.mu.Lock()
-	for _, fp := range collected {
-		r.fileProtos[fp.GetName()] = fp
-	}
-	err = r.rebuildLocked()
+	r.fileProtos = candidateProtos
+	r.files = candidateFiles
 	r.mu.Unlock()
-	if err != nil {
-		return 0, err
-	}
 	return version, nil
 }
 
 // rebuildLocked reconstructs the protoregistry.Files from the accumulated set of
 // FileDescriptorProtos. Caller must hold r.mu.
 func (r *Registry) rebuildLocked() error {
-	set := &descriptorpb.FileDescriptorSet{File: topoSort(r.fileProtos)}
-	files, err := protodesc.NewFiles(set)
+	files, err := buildFiles(r.fileProtos)
 	if err != nil {
-		return fmt.Errorf("schema: rebuild descriptor set: %w", err)
+		return err
 	}
 	r.files = files
 	return nil
+}
+
+func buildFiles(fileProtos map[string]*descriptorpb.FileDescriptorProto) (*protoregistry.Files, error) {
+	set := &descriptorpb.FileDescriptorSet{File: topoSort(fileProtos)}
+	files, err := protodesc.NewFiles(set)
+	if err != nil {
+		return nil, fmt.Errorf("schema: rebuild descriptor set: %w", err)
+	}
+	return files, nil
+}
+
+func cloneFileProtos(in map[string]*descriptorpb.FileDescriptorProto) map[string]*descriptorpb.FileDescriptorProto {
+	out := make(map[string]*descriptorpb.FileDescriptorProto, len(in))
+	for path, fp := range in {
+		out[path] = fp
+	}
+	return out
 }
 
 // MessageDescriptor returns the descriptor for a fully-qualified message name
@@ -240,7 +298,7 @@ func (r *Registry) ListSchemas() ([]SchemaInfo, error) {
 			if err := json.Unmarshal(v, &rec); err != nil {
 				return err
 			}
-			out = append(out, SchemaInfo{Name: rec.Name, Version: rec.Version, Source: rec.Source})
+			out = append(out, schemaInfoFromRecord(rec))
 			return nil
 		})
 	})
@@ -251,11 +309,166 @@ func (r *Registry) ListSchemas() ([]SchemaInfo, error) {
 	return out, nil
 }
 
+// SchemaHistory returns all immutable versions retained for name, oldest
+// first. Legacy schemas created before history support may expose only their
+// versions accepted after this feature was introduced.
+func (r *Registry) SchemaHistory(name string) ([]SchemaInfo, error) {
+	var out []SchemaInfo
+	err := r.store.View(func(tx *storage.Txn) error {
+		return tx.PrefixScan(schemaHistoryBucket, schemaHistoryPrefix(name), func(_, value []byte) error {
+			var rec record
+			if err := json.Unmarshal(value, &rec); err != nil {
+				return fmt.Errorf("schema: corrupt schema history record: %w", err)
+			}
+			out = append(out, schemaInfoFromRecord(rec))
+			return nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Version < out[j].Version })
+	return out, nil
+}
+
 // SchemaInfo is a user-facing summary of a registered schema.
 type SchemaInfo struct {
-	Name    string
-	Version int
-	Source  string
+	Name        string
+	Version     int
+	Source      string
+	Digest      string
+	CreatedUnix int64
+}
+
+func schemaInfoFromRecord(rec record) SchemaInfo {
+	return SchemaInfo{
+		Name:        rec.Name,
+		Version:     rec.Version,
+		Source:      rec.Source,
+		Digest:      rec.Digest,
+		CreatedUnix: rec.CreatedUnix,
+	}
+}
+
+func (r *Registry) activeSources() (map[string]string, error) {
+	sources := make(map[string]string)
+	err := r.store.View(func(tx *storage.Txn) error {
+		return tx.Scan(schemaBucket, func(_, value []byte) error {
+			var rec record
+			if err := json.Unmarshal(value, &rec); err != nil {
+				return fmt.Errorf("schema: corrupt schema record: %w", err)
+			}
+			sources[rec.Name] = rec.Source
+			return nil
+		})
+	})
+	return sources, err
+}
+
+func schemaHistoryPrefix(name string) []byte { return []byte(name + "\x00") }
+
+func schemaHistoryKey(name string, version int) []byte {
+	return []byte(fmt.Sprintf("%s\x00%020d", name, version))
+}
+
+func descriptorDigest(fdset []byte) string {
+	sum := sha256.Sum256(fdset)
+	return hex.EncodeToString(sum[:])
+}
+
+// ensureFileCompatible applies KoraDB's initial strict in-place evolution
+// policy: existing messages, fields, field names, wire kinds, cardinality,
+// presence, oneof membership, and message/enum references must remain stable.
+// New fields and new types are allowed. Destructive changes require a new
+// collection plus an explicit migration until a richer migration workflow is
+// introduced.
+func ensureFileCompatible(current, candidate *protoregistry.Files, path string) error {
+	if current == nil {
+		return nil
+	}
+	oldFile, err := current.FindFileByPath(path)
+	if err != nil {
+		return fmt.Errorf("schema %q: resolve active descriptor: %w", path, err)
+	}
+	newFile, err := candidate.FindFileByPath(path)
+	if err != nil {
+		return fmt.Errorf("schema %q: resolve candidate descriptor: %w", path, err)
+	}
+	if err := ensureMessagesCompatible(oldFile.Messages(), newFile.Messages()); err != nil {
+		return fmt.Errorf("schema %q: incompatible evolution: %w", path, err)
+	}
+	return ensureEnumsCompatible(oldFile.Enums(), newFile.Enums())
+}
+
+func ensureMessagesCompatible(oldMessages, newMessages protoreflect.MessageDescriptors) error {
+	for i := 0; i < oldMessages.Len(); i++ {
+		oldMessage := oldMessages.Get(i)
+		newMessage := newMessages.ByName(oldMessage.Name())
+		if newMessage == nil {
+			return fmt.Errorf("message %q was removed or renamed", oldMessage.FullName())
+		}
+		if err := ensureMessageCompatible(oldMessage, newMessage); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ensureMessageCompatible(oldMessage, newMessage protoreflect.MessageDescriptor) error {
+	oldFields := oldMessage.Fields()
+	for i := 0; i < oldFields.Len(); i++ {
+		oldField := oldFields.Get(i)
+		newField := newMessage.Fields().ByNumber(oldField.Number())
+		if newField == nil {
+			return fmt.Errorf("field %q (number %d) was removed", oldField.FullName(), oldField.Number())
+		}
+		if oldField.Name() != newField.Name() ||
+			oldField.Kind() != newField.Kind() ||
+			oldField.Cardinality() != newField.Cardinality() ||
+			oldField.HasPresence() != newField.HasPresence() ||
+			oldField.IsMap() != newField.IsMap() ||
+			oneofName(oldField) != oneofName(newField) {
+			return fmt.Errorf("field %q (number %d) changed name, kind, cardinality, presence, map, or oneof contract", oldField.FullName(), oldField.Number())
+		}
+		if oldField.Kind() == protoreflect.MessageKind || oldField.Kind() == protoreflect.GroupKind {
+			if oldField.Message().FullName() != newField.Message().FullName() {
+				return fmt.Errorf("field %q changed referenced message type", oldField.FullName())
+			}
+		}
+		if oldField.Kind() == protoreflect.EnumKind && oldField.Enum().FullName() != newField.Enum().FullName() {
+			return fmt.Errorf("field %q changed referenced enum type", oldField.FullName())
+		}
+	}
+	if err := ensureMessagesCompatible(oldMessage.Messages(), newMessage.Messages()); err != nil {
+		return err
+	}
+	return ensureEnumsCompatible(oldMessage.Enums(), newMessage.Enums())
+}
+
+func ensureEnumsCompatible(oldEnums, newEnums protoreflect.EnumDescriptors) error {
+	for i := 0; i < oldEnums.Len(); i++ {
+		oldEnum := oldEnums.Get(i)
+		newEnum := newEnums.ByName(oldEnum.Name())
+		if newEnum == nil {
+			return fmt.Errorf("enum %q was removed or renamed", oldEnum.FullName())
+		}
+		oldValues := oldEnum.Values()
+		for j := 0; j < oldValues.Len(); j++ {
+			oldValue := oldValues.Get(j)
+			newValue := newEnum.Values().ByNumber(oldValue.Number())
+			if newValue == nil || newValue.Name() != oldValue.Name() {
+				return fmt.Errorf("enum value %q (number %d) changed or was removed", oldValue.FullName(), oldValue.Number())
+			}
+		}
+	}
+	return nil
+}
+
+func oneofName(field protoreflect.FieldDescriptor) protoreflect.Name {
+	if oneof := field.ContainingOneof(); oneof != nil {
+		return oneof.Name()
+	}
+	return ""
 }
 
 // collectFiles walks fd and all its imports, recording each as a

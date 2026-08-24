@@ -28,7 +28,7 @@ function Get-IdentityValue {
 
 $requirements = @(
   @{key = "launch_status"; expected = "approved" },
-  @{key = "final_product_name"; expected = "approved" },
+  @{key = "product_name_approval"; expected = "approved" },
   @{key = "legal_owner_confirmation"; expected = "approved" },
   @{key = "trademark_clearance"; expected = "approved" },
   @{key = "domain_reservation"; expected = "reserved" },

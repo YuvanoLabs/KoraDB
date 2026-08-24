@@ -77,9 +77,32 @@ type Result struct {
 	JSON []byte
 }
 
-// Execute runs filter against the named collection and returns matching
-// documents as JSON. A nil filter matches every document.
+// DefaultResultLimit bounds the documents materialized by the current unary
+// query API. Pagination must replace this fixed ceiling before a stable SDK
+// promises traversal of arbitrarily large result sets.
+const DefaultResultLimit = 1000
+
+// ResultLimitError reports that a query matched more documents than the caller
+// allowed to materialize in one response.
+type ResultLimitError struct{ Limit int }
+
+func (e *ResultLimitError) Error() string {
+	return fmt.Sprintf("query: result limit of %d exceeded", e.Limit)
+}
+
+// Execute runs filter against the named collection with the default bounded
+// result limit. A nil filter matches every document.
 func Execute(db *engine.DB, coll string, filter Filter) ([]Result, error) {
+	return ExecuteWithLimit(db, coll, filter, DefaultResultLimit)
+}
+
+// ExecuteWithLimit runs filter against the named collection and materializes at
+// most limit results. It returns ResultLimitError rather than a partial result
+// when the limit is exceeded.
+func ExecuteWithLimit(db *engine.DB, coll string, filter Filter, limit int) ([]Result, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("query: result limit must be positive")
+	}
 	meta, err := db.GetCollection(coll)
 	if err != nil {
 		return nil, err
@@ -90,6 +113,21 @@ func Execute(db *engine.DB, coll string, filter Filter) ([]Result, error) {
 	}
 
 	var results []Result
+	appendResult := func(key []byte, msg *dynamicpb.Message) error {
+		if len(results) >= limit {
+			return &ResultLimitError{Limit: limit}
+		}
+		j, err := db.RenderMessage(msg)
+		if err != nil {
+			return err
+		}
+		id, err := db.IDFromStorageKey(meta, key)
+		if err != nil {
+			return err
+		}
+		results = append(results, Result{ID: id, JSON: j})
+		return nil
+	}
 	err = db.Store().View(func(tx *storage.Txn) error {
 		seedKeys, seeded := indexSeed(db, tx, meta, filter)
 		if seeded {
@@ -106,11 +144,9 @@ func Execute(db *engine.DB, coll string, filter Filter) ([]Result, error) {
 					return err
 				}
 				if ok {
-					j, err := db.RenderMessage(msg)
-					if err != nil {
+					if err := appendResult(key, msg); err != nil {
 						return err
 					}
-					results = append(results, Result{ID: string(key), JSON: j})
 				}
 			}
 			return nil
@@ -123,16 +159,18 @@ func Execute(db *engine.DB, coll string, filter Filter) ([]Result, error) {
 				return err
 			}
 			if ok {
-				j, err := db.RenderMessage(msg)
-				if err != nil {
-					return err
-				}
-				results = append(results, Result{ID: string(key), JSON: j})
+				return appendResult(key, msg)
 			}
 			return nil
 		})
 	})
-	return results, err
+	if err != nil {
+		// A caller must never receive a partial result set without an opaque
+		// continuation token. Discard accumulated documents until pagination is
+		// introduced as part of the public query contract.
+		return nil, err
+	}
+	return results, nil
 }
 
 // indexSeed looks for an equality predicate on an indexed field that can seed

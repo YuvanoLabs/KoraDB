@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"time"
 
 	"google.golang.org/grpc"
@@ -27,7 +28,10 @@ type backend interface {
 	ListCollections() ([]collRow, error)
 	Insert(coll, json string) (id string, err error)
 	Get(coll, id string) (json string, err error)
+	Update(coll, id, json string) error
 	Delete(coll, id string) error
+	Backup(w io.Writer) error
+	Verify() error
 	Query(coll, field string, op query.Op, value string) ([]docRow, error)
 	CreateKey(name, role string) (keyID, token string, err error)
 	ListKeys() ([]keyRow, error)
@@ -112,7 +116,15 @@ func (e *embeddedBackend) Get(coll, id string) (string, error) {
 	return string(j), err
 }
 
+func (e *embeddedBackend) Update(coll, id, json string) error {
+	return e.db.Update(coll, id, []byte(json))
+}
+
 func (e *embeddedBackend) Delete(coll, id string) error { return e.db.Delete(coll, id) }
+
+func (e *embeddedBackend) Backup(w io.Writer) error { return e.db.Backup(w) }
+
+func (e *embeddedBackend) Verify() error { return e.db.Verify() }
 
 func (e *embeddedBackend) Query(coll, fld string, op query.Op, value string) ([]docRow, error) {
 	rs, err := query.Execute(e.db, coll, query.Cmp{Field: fld, Op: op, Value: value})
@@ -248,11 +260,26 @@ func (r *remoteBackend) Get(coll, id string) (string, error) {
 	return resp.GetJson(), nil
 }
 
+func (r *remoteBackend) Update(coll, id, json string) error {
+	ctx, cancel := r.ctx()
+	defer cancel()
+	_, err := r.client.Update(ctx, &pb.UpdateRequest{Collection: coll, Id: id, Json: json})
+	return err
+}
+
 func (r *remoteBackend) Delete(coll, id string) error {
 	ctx, cancel := r.ctx()
 	defer cancel()
 	_, err := r.client.Delete(ctx, &pb.DeleteRequest{Collection: coll, Id: id})
 	return err
+}
+
+func (r *remoteBackend) Backup(io.Writer) error {
+	return fmt.Errorf("backup is available only for an embedded database; remote backup operations are not implemented")
+}
+
+func (r *remoteBackend) Verify() error {
+	return fmt.Errorf("verify is available only for an embedded database; remote verification operations are not implemented")
 }
 
 func (r *remoteBackend) Query(coll, fld string, op query.Op, value string) ([]docRow, error) {
