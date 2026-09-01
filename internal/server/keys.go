@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "KoraDB/api/gen/KoraDBv1"
-	"KoraDB/internal/auth"
+	pb "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1"
+	"github.com/YuvanoLabs/KoraDB/internal/auth"
 )
 
 // CreateKey mints a new API key (admin only — enforced by the interceptor). The
@@ -18,7 +19,11 @@ func (s *Server) CreateKey(ctx context.Context, req *pb.CreateKeyRequest) (*pb.C
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	token, keyID, err := auth.CreateKey(s.db.Store(), req.GetName(), role)
+	var expiresAt time.Time
+	if req.GetExpiresAtUnix() != 0 {
+		expiresAt = time.Unix(req.GetExpiresAtUnix(), 0).UTC()
+	}
+	token, keyID, err := auth.CreateKeyWithExpiry(s.db.Store(), req.GetName(), role, expiresAt)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -37,6 +42,7 @@ func (s *Server) ListKeys(ctx context.Context, _ *pb.ListKeysRequest) (*pb.ListK
 			Name:          r.Name,
 			Role:          toPBRole(r.Role),
 			CreatedAtUnix: r.CreatedUnix,
+			ExpiresAtUnix: r.ExpiresUnix,
 		})
 	}
 	return resp, nil

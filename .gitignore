@@ -1,6 +1,7 @@
 # Build output
 /bin/
 /dist/
+/.cache/
 
 # Database files produced by demos/tests
 *.db

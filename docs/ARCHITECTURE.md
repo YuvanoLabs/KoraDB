@@ -28,9 +28,10 @@ Remote CLI or generated gRPC client
    +--> TLS + API key --> gRPC server --> engine --> .db file
 ```
 
-Only the CLI currently abstracts both paths. The engine is under Go's `internal/` boundary, so an
-external application cannot yet import a supported embedded library. A public SDK with local and
-remote providers is a roadmap item.
+The CLI abstracts both paths. The embedded Go SDK source package is available
+at [`sdk/go/koradb`](../sdk/go/koradb) under the canonical module
+`github.com/YuvanoLabs/KoraDB`. A stable public Go SDK API and remote SDK
+provider remain release work; see [Language integrations](INTEGRATIONS.md).
 
 The remote API uses protobuf messages for RPC envelopes. User documents cross that API as
 ProtoJSON strings, then the server validates and converts them to protobuf wire bytes. This is not
@@ -86,12 +87,16 @@ that says "field 1 is an int32." So the registry:
 - rebuilds a `protoregistry.Files` in memory for fast lookup, and reloads it from disk on open,
 - hands out `MessageDescriptor`s and `dynamicpb.Message`s that every higher layer uses.
 
-Re-registering a schema name bumps a **counter** and replaces the persisted record for that name.
-The current implementation does not retain immutable historical versions or record a schema
-version with each document.
+Re-registering a schema name validates a complete candidate catalog before
+activation, rejects known incompatible changes, bumps a version counter, and
+stores an immutable history record. Collections continue to use the active
+descriptor for their bound message type; schema evolution must preserve the
+collection key and index invariants. See [Schema evolution](SCHEMA_EVOLUTION.md)
+for the precise compatibility contract.
 
-Runtime compilation currently receives the submitted file plus protobuf standard imports. Imports
-from another previously registered user schema are not yet a supported module/dependency flow.
+Runtime compilation receives the submitted file, protobuf standard imports,
+and the active registered-schema catalog. A schema may import another
+registered user schema by its logical registered name.
 
 ## Layer 2 — Document engine (`internal/engine`)
 
@@ -119,10 +124,11 @@ because protobuf matches fields by number: newly added fields are absent in old 
 records can use them immediately. This case is verified by `engine.TestDocumentSchemaEvolution`
 and demonstrable via the CLI.
 
-Arbitrary changes are not safe. Field renumbering, field-number reuse, incompatible wire-type
-changes, or changes to key/index fields can break reads or metadata invariants. The current
-registry compiles a candidate but does not yet enforce compatibility or rebuild affected indexes.
-See [SCHEMA_EVOLUTION.md](SCHEMA_EVOLUTION.md) for the required contract.
+Arbitrary changes are not safe. Field renumbering, field-number reuse,
+incompatible wire-type changes, or changes to key/index fields can break reads
+or metadata invariants. KoraDB rejects known incompatible schema replacement;
+application teams still own review and rollout of compatible additions. See
+[Schema evolution](SCHEMA_EVOLUTION.md) for the required contract.
 
 ## Layer 3 — Secondary indexes (`internal/index` + `engine/index.go`)
 
@@ -162,17 +168,22 @@ not as text).
 Multi-document transactions, replication, and horizontal scale are roadmap items — see
 [ROADMAP.md](ROADMAP.md).
 
-## Current architecture risks
+## Current architecture limits and release work
 
-The detailed source audit is in [PRODUCT_ASSESSMENT.md](PRODUCT_ASSESSMENT.md). The highest-priority
-items are:
+- Query results use canonical document IDs, including auto and supported
+  numeric field keys; a replacement update cannot change a field-backed key.
+- The legacy unary query API has a 1,000-document materialization limit and
+  returns no partial result set when it is exceeded. The core, Go SDK, native
+  ABI, gRPC API, and CLI also support explicit bounded pages with opaque
+  continuation tokens. Filter limits are enforced by the service.
+- Snapshot, verification, and guarded offline restore primitives exist, but
+  backup retention, off-host storage, encryption, RPO/RTO objectives,
+  compaction/repair policy, and production recovery drills remain release
+  work.
+- The service is single-node. It has health checks, JSON audit records, and a
+  loopback-only Prometheus metrics endpoint, but not distributed tracing,
+  diagnostics, external audit delivery, capacity qualification, or HA
+  guarantees required for a production support promise.
 
-- auto and numeric field-key query results currently expose raw binary storage keys rather than
-  user-facing decimal IDs;
-- replacement updates do not enforce field-key immutability;
-- some primary-key kinds are accepted at collection creation but do not round-trip;
-- schema activation is not atomic with full-registry validation and durable version history;
-- queries and recursive filters are not bounded or paginated;
-- backup, restore, compaction, health, metrics, and storage-format upgrades are not productized.
-
-These are roadmap items, not supported behaviors to design applications around.
+The complete, evidence-based release gates are in
+[Production release plan](PRODUCTION_RELEASE_PLAN.md).

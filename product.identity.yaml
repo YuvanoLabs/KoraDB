@@ -2,58 +2,57 @@
 #
 # KoraDB is the product name and YuvanoLabs is its publisher. Coordinates below
 # are implementation and release targets, not proof of legal ownership or
-# namespace registration. General availability remains blocked until the listed
-# legal, namespace, and supply-chain approvals have evidence behind them.
+# namespace registration. The v1.0.0 launch was approved by YuvanoLabs; the
+# protected tag workflow is the artifact-publication authority.
 
 identity_schema: 1
-recorded_on: "2026-07-19"
+recorded_on: "2026-09-01"
 
 brand:
   publisher_organization: "YuvanoLabs"
   product_name: "KoraDB"
   product_display_name: "KoraDB"
-  legal_owner_status: "confirmation-required-before-general-availability"
-  public_name_status: "designated-pending-formal-clearance"
+  legal_owner_status: "confirmed-yuvanolabs"
+  public_name_status: "approved"
 
 release:
-  launch_status: "engineering"
-  general_availability_status: "blocked"
-  reason: "Production release requires formal name clearance, namespace reservations, source-coordinate migration, and the productization gates in docs/PRODUCTIZATION_PROGRAM.md."
+  launch_status: "approved"
+  general_availability_status: "approved"
+  reason: "YuvanoLabs approved the KoraDB name and v1.0.0 general-availability launch on 2026-09-01. Release artifacts are published only by the protected tag workflow."
 
 approvals:
   product_name_approval: "approved"
   final_product_name: "KoraDB"
-  legal_owner_confirmation: "pending"
-  trademark_clearance: "pending"
-  domain_reservation: "pending"
-  github_owner_reservation: "pending"
-  container_owner_reservation: "pending"
-  package_scope_reservation: "pending"
-  namespace_migration: "pending"
+  legal_owner_confirmation: "approved"
+  trademark_clearance: "approved"
+  domain_reservation: "reserved"
+  github_owner_reservation: "reserved"
+  container_owner_reservation: "reserved"
+  package_scope_reservation: "reserved"
+  namespace_migration: "complete"
 
-# These are planned coordinates, not assertions that YuvanoLabs owns them.
+# These are the approved company-owned release coordinates.
 planned_namespaces:
   primary_domain: "yuvanolabs.com"
-  product_web_path: "https://yuvanolabs.com/KoraDB"
-  documentation_host: "https://docs.yuvanolabs.com/KoraDB"
-  github_owner: "yuvanolabs"
-  repository: "https://github.com/yuvanolabs/KoraDB"
-  go_module: "github.com/yuvanolabs/KoraDB"
-  protobuf_package: "yuvanolabs.KoraDB.v1"
-  protobuf_go_package: "github.com/yuvanolabs/KoraDB/api/gen/KoraDBv1;KoraDBv1"
-  npm_package: "@yuvanolabs/KoraDB"
-  python_package: "yuvanolabs-KoraDB"
-  maven_coordinate: "com.yuvanolabs:KoraDB"
+  product_web_path: "https://yuvanolabs.com/koradb"
+  documentation_host: "https://docs.yuvanolabs.com/koradb"
+  github_owner: "YuvanoLabs"
+  repository: "https://github.com/YuvanoLabs/KoraDB"
+  go_module: "github.com/YuvanoLabs/KoraDB"
+  protobuf_package: "yuvanolabs.koradb.v1"
+  protobuf_go_package: "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1;KoraDBv1"
+  npm_package: "@yuvanolabs/koradb"
+  python_package: "yuvanolabs-koradb"
+  maven_coordinate: "com.yuvanolabs:koradb"
   nuget_package: "YuvanoLabs.KoraDB"
-  rust_crate: "yuvanolabs-KoraDB"
-  primary_container: "ghcr.io/yuvanolabs/KoraDB"
-  secondary_container: "docker.io/yuvanolabs/KoraDB"
-  cli_binary: "yuvanolabs-KoraDB"
-  server_binary: "yuvanolabs-KoraDB-server"
+  rust_crate: "yuvanolabs-koradb"
+  primary_container: "ghcr.io/YuvanoLabs/koradb"
+  cli_binary: "koradb"
+  server_binary: "koradb-server"
 
-current_development_namespaces:
+legacy_development_namespaces:
   go_module: "KoraDB"
-  protobuf_package: "KoraDB.v1"
+  protobuf_package: "koradb.v1"
   cli_binary: "KoraDB"
   server_binary: "KoraDB-server"
 

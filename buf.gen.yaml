@@ -6,7 +6,7 @@ plugins:
   # .go files are committed, so building KoraDB needs neither buf nor protoc.
   - local: protoc-gen-go
     out: .
-    opt: module=KoraDB
+    opt: module=github.com/YuvanoLabs/KoraDB
   - local: protoc-gen-go-grpc
     out: .
-    opt: module=KoraDB
+    opt: module=github.com/YuvanoLabs/KoraDB

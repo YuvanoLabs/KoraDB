@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - uses: bufbuild/buf-setup-action@v1
+      - name: Verify release commit
+        run: |
+          go test ./...
+          go vet ./...
+          go build ./...
+          buf lint
+      - name: Build release archives
+        shell: pwsh
+        run: |
+          choco install mingw --no-progress --yes
+          $env:CC = 'C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin\gcc.exe'
+          $buildTime = (git show -s --format=%cI $env:GITHUB_SHA)
+          ./scripts/build-release.ps1 -Version "${{ github.ref_name }}" -Commit "${{ github.sha }}" -BuildTime $buildTime
+          ./scripts/test-native-abi.ps1 -OutputDirectory .cache/native-abi-release
+      - uses: anchore/sbom-action@v0
+        with:
+          path: dist
+          format: spdx-json
+          output-file: dist/sbom.spdx.json
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KoraDB-${{ github.ref_name }}
+          path: dist/
+          if-no-files-found: error
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.zip
+            dist/*checksums.txt
+            dist/release-manifest.json
+            dist/sbom.spdx.json

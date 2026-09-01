@@ -1,7 +1,8 @@
 //go:build cgo
 
 // KoraDB's pre-release C ABI. Build this package with:
-//   go build -buildmode=c-shared -o koradb-native.<ext> ./sdk/native/cshared
+//
+//	go build -buildmode=c-shared -o koradb-native.<ext> ./sdk/native/cshared
 package main
 
 /*
@@ -18,12 +19,12 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"KoraDB/internal/buildinfo"
-	"KoraDB/internal/engine"
-	"KoraDB/internal/query"
+	"github.com/YuvanoLabs/KoraDB/internal/buildinfo"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/query"
 )
 
-const nativeAPIVersion = "0.1.0-pre"
+const nativeAPIVersion = "0.2.0-pre"
 
 var nativeDatabases sync.Map // map[uint64]*engine.DB
 var nativeNextHandle atomic.Uint64
@@ -266,6 +267,52 @@ func KoraDBQueryJSON(handle C.uint64_t, collection, field, operatorName, value *
 		return nativeError(err)
 	}
 	*outResultsJSON = C.CString(string(encoded))
+	return nil
+}
+
+//export KoraDBQueryPageJSON
+func KoraDBQueryPageJSON(handle C.uint64_t, collection, field, operatorName, value *C.char, pageSize C.int32_t, pageToken *C.char, outResultsJSON, outNextPageToken **C.char) *C.char {
+	db, ok := nativeDatabase(handle)
+	if !ok {
+		return nativeError(fmt.Errorf("koradb native: invalid database handle"))
+	}
+	if outResultsJSON == nil || outNextPageToken == nil {
+		return nativeError(fmt.Errorf("koradb native: output pointers are required"))
+	}
+	collectionName, err := requiredCString(collection, "collection")
+	if err != nil {
+		return nativeError(err)
+	}
+	fieldName, err := requiredCString(field, "field")
+	if err != nil {
+		return nativeError(err)
+	}
+	operator, err := requiredCString(operatorName, "operator")
+	if err != nil {
+		return nativeError(err)
+	}
+	literal, err := requiredCString(value, "value")
+	if err != nil {
+		return nativeError(err)
+	}
+	op, err := nativeQueryOp(operator)
+	if err != nil {
+		return nativeError(err)
+	}
+	page, err := query.ExecutePage(db, collectionName, query.Cmp{Field: fieldName, Op: op, Value: literal}, int(pageSize), optionalCString(pageToken))
+	if err != nil {
+		return nativeError(err)
+	}
+	out := make([]abiDocument, 0, len(page.Results))
+	for _, result := range page.Results {
+		out = append(out, abiDocument{ID: result.ID, JSON: result.JSON})
+	}
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return nativeError(err)
+	}
+	*outResultsJSON = C.CString(string(encoded))
+	*outNextPageToken = C.CString(page.NextPageToken)
 	return nil
 }
 

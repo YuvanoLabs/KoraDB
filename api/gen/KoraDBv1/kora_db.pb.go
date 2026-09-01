@@ -4,12 +4,8 @@
 // 	protoc        (unknown)
 // source: kora_db.proto
 
-// PRE-RELEASE NAMESPACE. The public release gate requires migration to the
-// approved company-qualified package recorded in product.identity.yaml.
-// Regenerate all committed stubs as one coordinated change after canonical
-// package ownership and legal clearance are complete.
-//
-// KoraDB.v1 is the wire contract for the KoraDB gRPC server. It is a FIXED
+// yuvanolabs.koradb.v1 is the company-qualified wire contract for the KoraDB
+// gRPC server. It is a FIXED
 // schema: documents themselves are carried as JSON strings, because each
 // collection has its own user-defined message type that the server stores as
 // protobuf bytes internally. This keeps one stable service surface while
@@ -1112,7 +1108,7 @@ func (*Filter_OrGroup) isFilter_Node() {}
 type Cmp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
-	Op            Op                     `protobuf:"varint,2,opt,name=op,proto3,enum=koradb.v1.Op" json:"op,omitempty"`
+	Op            Op                     `protobuf:"varint,2,opt,name=op,proto3,enum=yuvanolabs.koradb.v1.Op" json:"op,omitempty"`
 	Value         string                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1214,9 +1210,16 @@ func (x *BoolGroup) GetFilters() []*Filter {
 }
 
 type QueryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Collection    string                 `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
-	Filter        *Filter                `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"` // omit to match all documents
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Collection string                 `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
+	Filter     *Filter                `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"` // omit to match all documents
+	// A positive value opts into bounded pagination. It must not exceed the
+	// server's published maximum. Zero preserves the legacy unary-query
+	// behavior: the server returns an error rather than a partial result set.
+	PageSize int32 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// Opaque token returned by a preceding Query response for this exact
+	// collection and filter. Leave empty for the first page.
+	PageToken     string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1265,9 +1268,26 @@ func (x *QueryRequest) GetFilter() *Filter {
 	return nil
 }
 
+func (x *QueryRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *QueryRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
 type QueryResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Results       []*Document            `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Results []*Document            `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	// Empty when this is the final page or when legacy unary-query behavior was
+	// used. Clients must not inspect or construct this value.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1307,6 +1327,13 @@ func (x *QueryResponse) GetResults() []*Document {
 		return x.Results
 	}
 	return nil
+}
+
+func (x *QueryResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
 }
 
 type Document struct {
@@ -1362,9 +1389,11 @@ func (x *Document) GetJson() string {
 }
 
 type CreateKeyRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // human-readable principal name (for audit), not a secret
-	Role          Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=koradb.v1.Role" json:"role,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // human-readable principal name (for audit), not a secret
+	Role  Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=yuvanolabs.koradb.v1.Role" json:"role,omitempty"`
+	// Optional UTC Unix timestamp. Zero means the API key does not expire.
+	ExpiresAtUnix int64 `protobuf:"varint,3,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1411,6 +1440,13 @@ func (x *CreateKeyRequest) GetRole() Role {
 		return x.Role
 	}
 	return Role_ROLE_UNSPECIFIED
+}
+
+func (x *CreateKeyRequest) GetExpiresAtUnix() int64 {
+	if x != nil {
+		return x.ExpiresAtUnix
+	}
+	return 0
 }
 
 type CreateKeyResponse struct {
@@ -1549,8 +1585,9 @@ type KeyInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	KeyId         string                 `protobuf:"bytes,1,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Role          Role                   `protobuf:"varint,3,opt,name=role,proto3,enum=koradb.v1.Role" json:"role,omitempty"`
+	Role          Role                   `protobuf:"varint,3,opt,name=role,proto3,enum=yuvanolabs.koradb.v1.Role" json:"role,omitempty"`
 	CreatedAtUnix int64                  `protobuf:"varint,4,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	ExpiresAtUnix int64                  `protobuf:"varint,5,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"` // zero means the API key does not expire
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1609,6 +1646,13 @@ func (x *KeyInfo) GetRole() Role {
 func (x *KeyInfo) GetCreatedAtUnix() int64 {
 	if x != nil {
 		return x.CreatedAtUnix
+	}
+	return 0
+}
+
+func (x *KeyInfo) GetExpiresAtUnix() int64 {
+	if x != nil {
+		return x.ExpiresAtUnix
 	}
 	return 0
 }
@@ -1697,15 +1741,15 @@ var File_kora_db_proto protoreflect.FileDescriptor
 
 const file_kora_db_proto_rawDesc = "" +
 	"\n" +
-	"\rkora_db.proto\x12\tkoradb.v1\"I\n" +
+	"\rkora_db.proto\x12\x14yuvanolabs.koradb.v1\"I\n" +
 	"\x10PutSchemaRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fproto_source\x18\x02 \x01(\tR\vprotoSource\"-\n" +
 	"\x11PutSchemaResponse\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\x05R\aversion\"\x14\n" +
-	"\x12ListSchemasRequest\"F\n" +
-	"\x13ListSchemasResponse\x12/\n" +
-	"\aschemas\x18\x01 \x03(\v2\x15.koradb.v1.SchemaInfoR\aschemas\":\n" +
+	"\x12ListSchemasRequest\"Q\n" +
+	"\x13ListSchemasResponse\x12:\n" +
+	"\aschemas\x18\x01 \x03(\v2 .yuvanolabs.koradb.v1.SchemaInfoR\aschemas\":\n" +
 	"\n" +
 	"SchemaInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -1716,9 +1760,9 @@ const file_kora_db_proto_rawDesc = "" +
 	"\tkey_field\x18\x03 \x01(\tR\bkeyField\x12\x18\n" +
 	"\aindexes\x18\x04 \x03(\tR\aindexes\"\x1a\n" +
 	"\x18CreateCollectionResponse\"\x18\n" +
-	"\x16ListCollectionsRequest\"V\n" +
-	"\x17ListCollectionsResponse\x12;\n" +
-	"\vcollections\x18\x01 \x03(\v2\x19.koradb.v1.CollectionInfoR\vcollections\"\x99\x01\n" +
+	"\x16ListCollectionsRequest\"a\n" +
+	"\x17ListCollectionsResponse\x12F\n" +
+	"\vcollections\x18\x01 \x03(\v2$.yuvanolabs.koradb.v1.CollectionInfoR\vcollections\"\x99\x01\n" +
 	"\x0eCollectionInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fmessage_type\x18\x02 \x01(\tR\vmessageType\x12\x19\n" +
@@ -1752,42 +1796,48 @@ const file_kora_db_proto_rawDesc = "" +
 	"collection\x18\x01 \x01(\tR\n" +
 	"collection\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\"\x10\n" +
-	"\x0eDeleteResponse\"\x9c\x01\n" +
-	"\x06Filter\x12\"\n" +
-	"\x03cmp\x18\x01 \x01(\v2\x0e.koradb.v1.CmpH\x00R\x03cmp\x123\n" +
-	"\tand_group\x18\x02 \x01(\v2\x14.koradb.v1.BoolGroupH\x00R\bandGroup\x121\n" +
-	"\bor_group\x18\x03 \x01(\v2\x14.koradb.v1.BoolGroupH\x00R\aorGroupB\x06\n" +
-	"\x04node\"P\n" +
+	"\x0eDeleteResponse\"\xbd\x01\n" +
+	"\x06Filter\x12-\n" +
+	"\x03cmp\x18\x01 \x01(\v2\x19.yuvanolabs.koradb.v1.CmpH\x00R\x03cmp\x12>\n" +
+	"\tand_group\x18\x02 \x01(\v2\x1f.yuvanolabs.koradb.v1.BoolGroupH\x00R\bandGroup\x12<\n" +
+	"\bor_group\x18\x03 \x01(\v2\x1f.yuvanolabs.koradb.v1.BoolGroupH\x00R\aorGroupB\x06\n" +
+	"\x04node\"[\n" +
 	"\x03Cmp\x12\x14\n" +
-	"\x05field\x18\x01 \x01(\tR\x05field\x12\x1d\n" +
-	"\x02op\x18\x02 \x01(\x0e2\r.koradb.v1.OpR\x02op\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\"8\n" +
-	"\tBoolGroup\x12+\n" +
-	"\afilters\x18\x01 \x03(\v2\x11.koradb.v1.FilterR\afilters\"Y\n" +
+	"\x05field\x18\x01 \x01(\tR\x05field\x12(\n" +
+	"\x02op\x18\x02 \x01(\x0e2\x18.yuvanolabs.koradb.v1.OpR\x02op\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"C\n" +
+	"\tBoolGroup\x126\n" +
+	"\afilters\x18\x01 \x03(\v2\x1c.yuvanolabs.koradb.v1.FilterR\afilters\"\xa0\x01\n" +
 	"\fQueryRequest\x12\x1e\n" +
 	"\n" +
 	"collection\x18\x01 \x01(\tR\n" +
-	"collection\x12)\n" +
-	"\x06filter\x18\x02 \x01(\v2\x11.koradb.v1.FilterR\x06filter\">\n" +
-	"\rQueryResponse\x12-\n" +
-	"\aresults\x18\x01 \x03(\v2\x13.koradb.v1.DocumentR\aresults\".\n" +
+	"collection\x124\n" +
+	"\x06filter\x18\x02 \x01(\v2\x1c.yuvanolabs.koradb.v1.FilterR\x06filter\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"q\n" +
+	"\rQueryResponse\x128\n" +
+	"\aresults\x18\x01 \x03(\v2\x1e.yuvanolabs.koradb.v1.DocumentR\aresults\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\".\n" +
 	"\bDocument\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04json\x18\x02 \x01(\tR\x04json\"K\n" +
+	"\x04json\x18\x02 \x01(\tR\x04json\"~\n" +
 	"\x10CreateKeyRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
-	"\x04role\x18\x02 \x01(\x0e2\x0f.koradb.v1.RoleR\x04role\"@\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12.\n" +
+	"\x04role\x18\x02 \x01(\x0e2\x1a.yuvanolabs.koradb.v1.RoleR\x04role\x12&\n" +
+	"\x0fexpires_at_unix\x18\x03 \x01(\x03R\rexpiresAtUnix\"@\n" +
 	"\x11CreateKeyResponse\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\"\x11\n" +
-	"\x0fListKeysRequest\":\n" +
-	"\x10ListKeysResponse\x12&\n" +
-	"\x04keys\x18\x01 \x03(\v2\x12.koradb.v1.KeyInfoR\x04keys\"\x81\x01\n" +
+	"\x0fListKeysRequest\"E\n" +
+	"\x10ListKeysResponse\x121\n" +
+	"\x04keys\x18\x01 \x03(\v2\x1d.yuvanolabs.koradb.v1.KeyInfoR\x04keys\"\xb4\x01\n" +
 	"\aKeyInfo\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
-	"\x04role\x18\x03 \x01(\x0e2\x0f.koradb.v1.RoleR\x04role\x12&\n" +
-	"\x0fcreated_at_unix\x18\x04 \x01(\x03R\rcreatedAtUnix\")\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12.\n" +
+	"\x04role\x18\x03 \x01(\x0e2\x1a.yuvanolabs.koradb.v1.RoleR\x04role\x12&\n" +
+	"\x0fcreated_at_unix\x18\x04 \x01(\x03R\rcreatedAtUnix\x12&\n" +
+	"\x0fexpires_at_unix\x18\x05 \x01(\x03R\rexpiresAtUnix\")\n" +
 	"\x10RevokeKeyRequest\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\"\x13\n" +
 	"\x11RevokeKeyResponse*S\n" +
@@ -1806,22 +1856,21 @@ const file_kora_db_proto_rawDesc = "" +
 	"\x06OP_GTE\x10\x04\x12\t\n" +
 	"\x05OP_LT\x10\x05\x12\n" +
 	"\n" +
-	"\x06OP_LTE\x10\x062\xd9\x06\n" +
-	"\x06KoraDB\x12F\n" +
-	"\tPutSchema\x12\x1b.koradb.v1.PutSchemaRequest\x1a\x1c.koradb.v1.PutSchemaResponse\x12L\n" +
-	"\vListSchemas\x12\x1d.koradb.v1.ListSchemasRequest\x1a\x1e.koradb.v1.ListSchemasResponse\x12[\n" +
-	"\x10CreateCollection\x12\".koradb.v1.CreateCollectionRequest\x1a#.koradb.v1.CreateCollectionResponse\x12X\n" +
-	"\x0fListCollections\x12!.koradb.v1.ListCollectionsRequest\x1a\".koradb.v1.ListCollectionsResponse\x12=\n" +
-	"\x06Insert\x12\x18.koradb.v1.InsertRequest\x1a\x19.koradb.v1.InsertResponse\x124\n" +
-	"\x03Get\x12\x15.koradb.v1.GetRequest\x1a\x16.koradb.v1.GetResponse\x12=\n" +
-	"\x06Update\x12\x18.koradb.v1.UpdateRequest\x1a\x19.koradb.v1.UpdateResponse\x12=\n" +
-	"\x06Delete\x12\x18.koradb.v1.DeleteRequest\x1a\x19.koradb.v1.DeleteResponse\x12:\n" +
-	"\x05Query\x12\x17.koradb.v1.QueryRequest\x1a\x18.koradb.v1.QueryResponse\x12F\n" +
-	"\tCreateKey\x12\x1b.koradb.v1.CreateKeyRequest\x1a\x1c.koradb.v1.CreateKeyResponse\x12C\n" +
-	"\bListKeys\x12\x1a.koradb.v1.ListKeysRequest\x1a\x1b.koradb.v1.ListKeysResponse\x12F\n" +
-	"\tRevokeKey\x12\x1b.koradb.v1.RevokeKeyRequest\x1a\x1c.koradb.v1.RevokeKeyResponseB\x83\x01\n" +
-	"\rcom.koradb.v1B\vKoraDbProtoP\x01Z KoraDB/api/gen/KoraDBv1;KoraDBv1\xa2\x02\x03KXX\xaa\x02\tKoradb.V1\xca\x02\tKoradb\\V1\xe2\x02\x15Koradb\\V1\\GPBMetadata\xea\x02\n" +
-	"Koradb::V1b\x06proto3"
+	"\x06OP_LTE\x10\x062\xe1\b\n" +
+	"\x06KoraDB\x12\\\n" +
+	"\tPutSchema\x12&.yuvanolabs.koradb.v1.PutSchemaRequest\x1a'.yuvanolabs.koradb.v1.PutSchemaResponse\x12b\n" +
+	"\vListSchemas\x12(.yuvanolabs.koradb.v1.ListSchemasRequest\x1a).yuvanolabs.koradb.v1.ListSchemasResponse\x12q\n" +
+	"\x10CreateCollection\x12-.yuvanolabs.koradb.v1.CreateCollectionRequest\x1a..yuvanolabs.koradb.v1.CreateCollectionResponse\x12n\n" +
+	"\x0fListCollections\x12,.yuvanolabs.koradb.v1.ListCollectionsRequest\x1a-.yuvanolabs.koradb.v1.ListCollectionsResponse\x12S\n" +
+	"\x06Insert\x12#.yuvanolabs.koradb.v1.InsertRequest\x1a$.yuvanolabs.koradb.v1.InsertResponse\x12J\n" +
+	"\x03Get\x12 .yuvanolabs.koradb.v1.GetRequest\x1a!.yuvanolabs.koradb.v1.GetResponse\x12S\n" +
+	"\x06Update\x12#.yuvanolabs.koradb.v1.UpdateRequest\x1a$.yuvanolabs.koradb.v1.UpdateResponse\x12S\n" +
+	"\x06Delete\x12#.yuvanolabs.koradb.v1.DeleteRequest\x1a$.yuvanolabs.koradb.v1.DeleteResponse\x12P\n" +
+	"\x05Query\x12\".yuvanolabs.koradb.v1.QueryRequest\x1a#.yuvanolabs.koradb.v1.QueryResponse\x12\\\n" +
+	"\tCreateKey\x12&.yuvanolabs.koradb.v1.CreateKeyRequest\x1a'.yuvanolabs.koradb.v1.CreateKeyResponse\x12Y\n" +
+	"\bListKeys\x12%.yuvanolabs.koradb.v1.ListKeysRequest\x1a&.yuvanolabs.koradb.v1.ListKeysResponse\x12\\\n" +
+	"\tRevokeKey\x12&.yuvanolabs.koradb.v1.RevokeKeyRequest\x1a'.yuvanolabs.koradb.v1.RevokeKeyResponseB\xd1\x01\n" +
+	"\x18com.yuvanolabs.koradb.v1B\vKoraDbProtoP\x01Z6github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1;KoraDBv1\xa2\x02\x03YKX\xaa\x02\x14Yuvanolabs.Koradb.V1\xca\x02\x14Yuvanolabs\\Koradb\\V1\xe2\x02 Yuvanolabs\\Koradb\\V1\\GPBMetadata\xea\x02\x16Yuvanolabs::Koradb::V1b\x06proto3"
 
 var (
 	file_kora_db_proto_rawDescOnce sync.Once
@@ -1838,77 +1887,77 @@ func file_kora_db_proto_rawDescGZIP() []byte {
 var file_kora_db_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_kora_db_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_kora_db_proto_goTypes = []any{
-	(Role)(0),                        // 0: koradb.v1.Role
-	(Op)(0),                          // 1: koradb.v1.Op
-	(*PutSchemaRequest)(nil),         // 2: koradb.v1.PutSchemaRequest
-	(*PutSchemaResponse)(nil),        // 3: koradb.v1.PutSchemaResponse
-	(*ListSchemasRequest)(nil),       // 4: koradb.v1.ListSchemasRequest
-	(*ListSchemasResponse)(nil),      // 5: koradb.v1.ListSchemasResponse
-	(*SchemaInfo)(nil),               // 6: koradb.v1.SchemaInfo
-	(*CreateCollectionRequest)(nil),  // 7: koradb.v1.CreateCollectionRequest
-	(*CreateCollectionResponse)(nil), // 8: koradb.v1.CreateCollectionResponse
-	(*ListCollectionsRequest)(nil),   // 9: koradb.v1.ListCollectionsRequest
-	(*ListCollectionsResponse)(nil),  // 10: koradb.v1.ListCollectionsResponse
-	(*CollectionInfo)(nil),           // 11: koradb.v1.CollectionInfo
-	(*InsertRequest)(nil),            // 12: koradb.v1.InsertRequest
-	(*InsertResponse)(nil),           // 13: koradb.v1.InsertResponse
-	(*GetRequest)(nil),               // 14: koradb.v1.GetRequest
-	(*GetResponse)(nil),              // 15: koradb.v1.GetResponse
-	(*UpdateRequest)(nil),            // 16: koradb.v1.UpdateRequest
-	(*UpdateResponse)(nil),           // 17: koradb.v1.UpdateResponse
-	(*DeleteRequest)(nil),            // 18: koradb.v1.DeleteRequest
-	(*DeleteResponse)(nil),           // 19: koradb.v1.DeleteResponse
-	(*Filter)(nil),                   // 20: koradb.v1.Filter
-	(*Cmp)(nil),                      // 21: koradb.v1.Cmp
-	(*BoolGroup)(nil),                // 22: koradb.v1.BoolGroup
-	(*QueryRequest)(nil),             // 23: koradb.v1.QueryRequest
-	(*QueryResponse)(nil),            // 24: koradb.v1.QueryResponse
-	(*Document)(nil),                 // 25: koradb.v1.Document
-	(*CreateKeyRequest)(nil),         // 26: koradb.v1.CreateKeyRequest
-	(*CreateKeyResponse)(nil),        // 27: koradb.v1.CreateKeyResponse
-	(*ListKeysRequest)(nil),          // 28: koradb.v1.ListKeysRequest
-	(*ListKeysResponse)(nil),         // 29: koradb.v1.ListKeysResponse
-	(*KeyInfo)(nil),                  // 30: koradb.v1.KeyInfo
-	(*RevokeKeyRequest)(nil),         // 31: koradb.v1.RevokeKeyRequest
-	(*RevokeKeyResponse)(nil),        // 32: koradb.v1.RevokeKeyResponse
+	(Role)(0),                        // 0: yuvanolabs.koradb.v1.Role
+	(Op)(0),                          // 1: yuvanolabs.koradb.v1.Op
+	(*PutSchemaRequest)(nil),         // 2: yuvanolabs.koradb.v1.PutSchemaRequest
+	(*PutSchemaResponse)(nil),        // 3: yuvanolabs.koradb.v1.PutSchemaResponse
+	(*ListSchemasRequest)(nil),       // 4: yuvanolabs.koradb.v1.ListSchemasRequest
+	(*ListSchemasResponse)(nil),      // 5: yuvanolabs.koradb.v1.ListSchemasResponse
+	(*SchemaInfo)(nil),               // 6: yuvanolabs.koradb.v1.SchemaInfo
+	(*CreateCollectionRequest)(nil),  // 7: yuvanolabs.koradb.v1.CreateCollectionRequest
+	(*CreateCollectionResponse)(nil), // 8: yuvanolabs.koradb.v1.CreateCollectionResponse
+	(*ListCollectionsRequest)(nil),   // 9: yuvanolabs.koradb.v1.ListCollectionsRequest
+	(*ListCollectionsResponse)(nil),  // 10: yuvanolabs.koradb.v1.ListCollectionsResponse
+	(*CollectionInfo)(nil),           // 11: yuvanolabs.koradb.v1.CollectionInfo
+	(*InsertRequest)(nil),            // 12: yuvanolabs.koradb.v1.InsertRequest
+	(*InsertResponse)(nil),           // 13: yuvanolabs.koradb.v1.InsertResponse
+	(*GetRequest)(nil),               // 14: yuvanolabs.koradb.v1.GetRequest
+	(*GetResponse)(nil),              // 15: yuvanolabs.koradb.v1.GetResponse
+	(*UpdateRequest)(nil),            // 16: yuvanolabs.koradb.v1.UpdateRequest
+	(*UpdateResponse)(nil),           // 17: yuvanolabs.koradb.v1.UpdateResponse
+	(*DeleteRequest)(nil),            // 18: yuvanolabs.koradb.v1.DeleteRequest
+	(*DeleteResponse)(nil),           // 19: yuvanolabs.koradb.v1.DeleteResponse
+	(*Filter)(nil),                   // 20: yuvanolabs.koradb.v1.Filter
+	(*Cmp)(nil),                      // 21: yuvanolabs.koradb.v1.Cmp
+	(*BoolGroup)(nil),                // 22: yuvanolabs.koradb.v1.BoolGroup
+	(*QueryRequest)(nil),             // 23: yuvanolabs.koradb.v1.QueryRequest
+	(*QueryResponse)(nil),            // 24: yuvanolabs.koradb.v1.QueryResponse
+	(*Document)(nil),                 // 25: yuvanolabs.koradb.v1.Document
+	(*CreateKeyRequest)(nil),         // 26: yuvanolabs.koradb.v1.CreateKeyRequest
+	(*CreateKeyResponse)(nil),        // 27: yuvanolabs.koradb.v1.CreateKeyResponse
+	(*ListKeysRequest)(nil),          // 28: yuvanolabs.koradb.v1.ListKeysRequest
+	(*ListKeysResponse)(nil),         // 29: yuvanolabs.koradb.v1.ListKeysResponse
+	(*KeyInfo)(nil),                  // 30: yuvanolabs.koradb.v1.KeyInfo
+	(*RevokeKeyRequest)(nil),         // 31: yuvanolabs.koradb.v1.RevokeKeyRequest
+	(*RevokeKeyResponse)(nil),        // 32: yuvanolabs.koradb.v1.RevokeKeyResponse
 }
 var file_kora_db_proto_depIdxs = []int32{
-	6,  // 0: koradb.v1.ListSchemasResponse.schemas:type_name -> koradb.v1.SchemaInfo
-	11, // 1: koradb.v1.ListCollectionsResponse.collections:type_name -> koradb.v1.CollectionInfo
-	21, // 2: koradb.v1.Filter.cmp:type_name -> koradb.v1.Cmp
-	22, // 3: koradb.v1.Filter.and_group:type_name -> koradb.v1.BoolGroup
-	22, // 4: koradb.v1.Filter.or_group:type_name -> koradb.v1.BoolGroup
-	1,  // 5: koradb.v1.Cmp.op:type_name -> koradb.v1.Op
-	20, // 6: koradb.v1.BoolGroup.filters:type_name -> koradb.v1.Filter
-	20, // 7: koradb.v1.QueryRequest.filter:type_name -> koradb.v1.Filter
-	25, // 8: koradb.v1.QueryResponse.results:type_name -> koradb.v1.Document
-	0,  // 9: koradb.v1.CreateKeyRequest.role:type_name -> koradb.v1.Role
-	30, // 10: koradb.v1.ListKeysResponse.keys:type_name -> koradb.v1.KeyInfo
-	0,  // 11: koradb.v1.KeyInfo.role:type_name -> koradb.v1.Role
-	2,  // 12: koradb.v1.KoraDB.PutSchema:input_type -> koradb.v1.PutSchemaRequest
-	4,  // 13: koradb.v1.KoraDB.ListSchemas:input_type -> koradb.v1.ListSchemasRequest
-	7,  // 14: koradb.v1.KoraDB.CreateCollection:input_type -> koradb.v1.CreateCollectionRequest
-	9,  // 15: koradb.v1.KoraDB.ListCollections:input_type -> koradb.v1.ListCollectionsRequest
-	12, // 16: koradb.v1.KoraDB.Insert:input_type -> koradb.v1.InsertRequest
-	14, // 17: koradb.v1.KoraDB.Get:input_type -> koradb.v1.GetRequest
-	16, // 18: koradb.v1.KoraDB.Update:input_type -> koradb.v1.UpdateRequest
-	18, // 19: koradb.v1.KoraDB.Delete:input_type -> koradb.v1.DeleteRequest
-	23, // 20: koradb.v1.KoraDB.Query:input_type -> koradb.v1.QueryRequest
-	26, // 21: koradb.v1.KoraDB.CreateKey:input_type -> koradb.v1.CreateKeyRequest
-	28, // 22: koradb.v1.KoraDB.ListKeys:input_type -> koradb.v1.ListKeysRequest
-	31, // 23: koradb.v1.KoraDB.RevokeKey:input_type -> koradb.v1.RevokeKeyRequest
-	3,  // 24: koradb.v1.KoraDB.PutSchema:output_type -> koradb.v1.PutSchemaResponse
-	5,  // 25: koradb.v1.KoraDB.ListSchemas:output_type -> koradb.v1.ListSchemasResponse
-	8,  // 26: koradb.v1.KoraDB.CreateCollection:output_type -> koradb.v1.CreateCollectionResponse
-	10, // 27: koradb.v1.KoraDB.ListCollections:output_type -> koradb.v1.ListCollectionsResponse
-	13, // 28: koradb.v1.KoraDB.Insert:output_type -> koradb.v1.InsertResponse
-	15, // 29: koradb.v1.KoraDB.Get:output_type -> koradb.v1.GetResponse
-	17, // 30: koradb.v1.KoraDB.Update:output_type -> koradb.v1.UpdateResponse
-	19, // 31: koradb.v1.KoraDB.Delete:output_type -> koradb.v1.DeleteResponse
-	24, // 32: koradb.v1.KoraDB.Query:output_type -> koradb.v1.QueryResponse
-	27, // 33: koradb.v1.KoraDB.CreateKey:output_type -> koradb.v1.CreateKeyResponse
-	29, // 34: koradb.v1.KoraDB.ListKeys:output_type -> koradb.v1.ListKeysResponse
-	32, // 35: koradb.v1.KoraDB.RevokeKey:output_type -> koradb.v1.RevokeKeyResponse
+	6,  // 0: yuvanolabs.koradb.v1.ListSchemasResponse.schemas:type_name -> yuvanolabs.koradb.v1.SchemaInfo
+	11, // 1: yuvanolabs.koradb.v1.ListCollectionsResponse.collections:type_name -> yuvanolabs.koradb.v1.CollectionInfo
+	21, // 2: yuvanolabs.koradb.v1.Filter.cmp:type_name -> yuvanolabs.koradb.v1.Cmp
+	22, // 3: yuvanolabs.koradb.v1.Filter.and_group:type_name -> yuvanolabs.koradb.v1.BoolGroup
+	22, // 4: yuvanolabs.koradb.v1.Filter.or_group:type_name -> yuvanolabs.koradb.v1.BoolGroup
+	1,  // 5: yuvanolabs.koradb.v1.Cmp.op:type_name -> yuvanolabs.koradb.v1.Op
+	20, // 6: yuvanolabs.koradb.v1.BoolGroup.filters:type_name -> yuvanolabs.koradb.v1.Filter
+	20, // 7: yuvanolabs.koradb.v1.QueryRequest.filter:type_name -> yuvanolabs.koradb.v1.Filter
+	25, // 8: yuvanolabs.koradb.v1.QueryResponse.results:type_name -> yuvanolabs.koradb.v1.Document
+	0,  // 9: yuvanolabs.koradb.v1.CreateKeyRequest.role:type_name -> yuvanolabs.koradb.v1.Role
+	30, // 10: yuvanolabs.koradb.v1.ListKeysResponse.keys:type_name -> yuvanolabs.koradb.v1.KeyInfo
+	0,  // 11: yuvanolabs.koradb.v1.KeyInfo.role:type_name -> yuvanolabs.koradb.v1.Role
+	2,  // 12: yuvanolabs.koradb.v1.KoraDB.PutSchema:input_type -> yuvanolabs.koradb.v1.PutSchemaRequest
+	4,  // 13: yuvanolabs.koradb.v1.KoraDB.ListSchemas:input_type -> yuvanolabs.koradb.v1.ListSchemasRequest
+	7,  // 14: yuvanolabs.koradb.v1.KoraDB.CreateCollection:input_type -> yuvanolabs.koradb.v1.CreateCollectionRequest
+	9,  // 15: yuvanolabs.koradb.v1.KoraDB.ListCollections:input_type -> yuvanolabs.koradb.v1.ListCollectionsRequest
+	12, // 16: yuvanolabs.koradb.v1.KoraDB.Insert:input_type -> yuvanolabs.koradb.v1.InsertRequest
+	14, // 17: yuvanolabs.koradb.v1.KoraDB.Get:input_type -> yuvanolabs.koradb.v1.GetRequest
+	16, // 18: yuvanolabs.koradb.v1.KoraDB.Update:input_type -> yuvanolabs.koradb.v1.UpdateRequest
+	18, // 19: yuvanolabs.koradb.v1.KoraDB.Delete:input_type -> yuvanolabs.koradb.v1.DeleteRequest
+	23, // 20: yuvanolabs.koradb.v1.KoraDB.Query:input_type -> yuvanolabs.koradb.v1.QueryRequest
+	26, // 21: yuvanolabs.koradb.v1.KoraDB.CreateKey:input_type -> yuvanolabs.koradb.v1.CreateKeyRequest
+	28, // 22: yuvanolabs.koradb.v1.KoraDB.ListKeys:input_type -> yuvanolabs.koradb.v1.ListKeysRequest
+	31, // 23: yuvanolabs.koradb.v1.KoraDB.RevokeKey:input_type -> yuvanolabs.koradb.v1.RevokeKeyRequest
+	3,  // 24: yuvanolabs.koradb.v1.KoraDB.PutSchema:output_type -> yuvanolabs.koradb.v1.PutSchemaResponse
+	5,  // 25: yuvanolabs.koradb.v1.KoraDB.ListSchemas:output_type -> yuvanolabs.koradb.v1.ListSchemasResponse
+	8,  // 26: yuvanolabs.koradb.v1.KoraDB.CreateCollection:output_type -> yuvanolabs.koradb.v1.CreateCollectionResponse
+	10, // 27: yuvanolabs.koradb.v1.KoraDB.ListCollections:output_type -> yuvanolabs.koradb.v1.ListCollectionsResponse
+	13, // 28: yuvanolabs.koradb.v1.KoraDB.Insert:output_type -> yuvanolabs.koradb.v1.InsertResponse
+	15, // 29: yuvanolabs.koradb.v1.KoraDB.Get:output_type -> yuvanolabs.koradb.v1.GetResponse
+	17, // 30: yuvanolabs.koradb.v1.KoraDB.Update:output_type -> yuvanolabs.koradb.v1.UpdateResponse
+	19, // 31: yuvanolabs.koradb.v1.KoraDB.Delete:output_type -> yuvanolabs.koradb.v1.DeleteResponse
+	24, // 32: yuvanolabs.koradb.v1.KoraDB.Query:output_type -> yuvanolabs.koradb.v1.QueryResponse
+	27, // 33: yuvanolabs.koradb.v1.KoraDB.CreateKey:output_type -> yuvanolabs.koradb.v1.CreateKeyResponse
+	29, // 34: yuvanolabs.koradb.v1.KoraDB.ListKeys:output_type -> yuvanolabs.koradb.v1.ListKeysResponse
+	32, // 35: yuvanolabs.koradb.v1.KoraDB.RevokeKey:output_type -> yuvanolabs.koradb.v1.RevokeKeyResponse
 	24, // [24:36] is the sub-list for method output_type
 	12, // [12:24] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name

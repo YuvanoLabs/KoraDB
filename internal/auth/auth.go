@@ -27,7 +27,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 // keysBucket stores one KeyRecord per API key, keyed by key id.
@@ -93,16 +93,27 @@ type KeyRecord struct {
 	Role         Role   `json:"role"`
 	SecretSHA256 string `json:"secretSha256"` // hex of sha256(secret)
 	CreatedUnix  int64  `json:"createdUnix"`
+	ExpiresUnix  int64  `json:"expiresUnix,omitempty"` // zero means no expiry
 }
 
 // CreateKey mints a new API key, persists its record, and returns the token.
 // The token is the only time the secret is available; only its hash is stored.
 func CreateKey(store *storage.Store, name string, role Role) (token, keyID string, err error) {
+	return CreateKeyWithExpiry(store, name, role, time.Time{})
+}
+
+// CreateKeyWithExpiry mints an API key with an optional UTC expiry. A zero
+// expiry means the key does not expire automatically. The caller must still
+// rotate and revoke keys according to the deployment's credential policy.
+func CreateKeyWithExpiry(store *storage.Store, name string, role Role, expiresAt time.Time) (token, keyID string, err error) {
 	if role < RoleReadOnly || role > RoleAdmin {
 		return "", "", fmt.Errorf("auth: invalid key role %d", role)
 	}
 	if err := validatePrincipalName(name); err != nil {
 		return "", "", err
+	}
+	if !expiresAt.IsZero() && !expiresAt.After(time.Now()) {
+		return "", "", errors.New("auth: key expiry must be in the future")
 	}
 	keyIDBytes := make([]byte, 8)
 	secretBytes := make([]byte, 32)
@@ -123,6 +134,9 @@ func CreateKey(store *storage.Store, name string, role Role) (token, keyID strin
 		SecretSHA256: hashSecret(secret),
 		CreatedUnix:  time.Now().Unix(),
 	}
+	if !expiresAt.IsZero() {
+		rec.ExpiresUnix = expiresAt.UTC().Unix()
+	}
 	b, err := json.Marshal(rec)
 	if err != nil {
 		return "", "", err
@@ -137,6 +151,10 @@ func CreateKey(store *storage.Store, name string, role Role) (token, keyID strin
 
 // Authenticate validates a token and returns the corresponding principal.
 func Authenticate(store *storage.Store, token string) (*Principal, error) {
+	return authenticateAt(store, token, time.Now())
+}
+
+func authenticateAt(store *storage.Store, token string, now time.Time) (*Principal, error) {
 	keyID, secret, err := parseToken(token)
 	if err != nil {
 		return nil, err
@@ -161,6 +179,9 @@ func Authenticate(store *storage.Store, token string) (*Principal, error) {
 	}
 	// Constant-time comparison of the secret hash.
 	if subtle.ConstantTimeCompare([]byte(hashSecret(secret)), []byte(rec.SecretSHA256)) != 1 {
+		return nil, ErrInvalidToken
+	}
+	if rec.ExpiresUnix != 0 && !now.Before(time.Unix(rec.ExpiresUnix, 0)) {
 		return nil, ErrInvalidToken
 	}
 	return &Principal{KeyID: rec.KeyID, Name: rec.Name, Role: rec.Role}, nil
@@ -303,4 +324,3 @@ func parseToken(token string) (keyID, secret string, err error) {
 	}
 	return parts[0], parts[1], nil
 }
-

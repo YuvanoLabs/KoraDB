@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	pb "KoraDB/api/gen/KoraDBv1"
-	"KoraDB/internal/auth"
-	"KoraDB/internal/engine"
-	"KoraDB/internal/query"
+	pb "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1"
+	"github.com/YuvanoLabs/KoraDB/internal/auth"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/query"
 )
 
 // backend is the set of operations the CLI needs. It is implemented twice: an
@@ -32,8 +32,8 @@ type backend interface {
 	Delete(coll, id string) error
 	Backup(w io.Writer) error
 	Verify() error
-	Query(coll, field string, op query.Op, value string) ([]docRow, error)
-	CreateKey(name, role string) (keyID, token string, err error)
+	QueryPage(coll, field string, op query.Op, value string, pageSize int, pageToken string) ([]docRow, string, error)
+	CreateKey(name, role string, expiresAtUnix int64) (keyID, token string, err error)
 	ListKeys() ([]keyRow, error)
 	RevokeKey(keyID string) error
 	Close() error
@@ -58,6 +58,7 @@ type keyRow struct {
 	Name        string
 	Role        string
 	CreatedUnix int64
+	ExpiresUnix int64
 }
 
 // --- embedded backend (opens the .db file directly) ---
@@ -126,24 +127,40 @@ func (e *embeddedBackend) Backup(w io.Writer) error { return e.db.Backup(w) }
 
 func (e *embeddedBackend) Verify() error { return e.db.Verify() }
 
-func (e *embeddedBackend) Query(coll, fld string, op query.Op, value string) ([]docRow, error) {
-	rs, err := query.Execute(e.db, coll, query.Cmp{Field: fld, Op: op, Value: value})
-	if err != nil {
-		return nil, err
+func (e *embeddedBackend) QueryPage(coll, fld string, op query.Op, value string, pageSize int, pageToken string) ([]docRow, string, error) {
+	filter := query.Cmp{Field: fld, Op: op, Value: value}
+	if pageSize == 0 {
+		rs, err := query.Execute(e.db, coll, filter)
+		if err != nil {
+			return nil, "", err
+		}
+		out := make([]docRow, 0, len(rs))
+		for _, r := range rs {
+			out = append(out, docRow{ID: r.ID, JSON: string(r.JSON)})
+		}
+		return out, "", nil
 	}
-	out := make([]docRow, 0, len(rs))
-	for _, r := range rs {
+	page, err := query.ExecutePage(e.db, coll, filter, pageSize, pageToken)
+	if err != nil {
+		return nil, "", err
+	}
+	out := make([]docRow, 0, len(page.Results))
+	for _, r := range page.Results {
 		out = append(out, docRow{ID: r.ID, JSON: string(r.JSON)})
 	}
-	return out, nil
+	return out, page.NextPageToken, nil
 }
 
-func (e *embeddedBackend) CreateKey(name, role string) (string, string, error) {
+func (e *embeddedBackend) CreateKey(name, role string, expiresAtUnix int64) (string, string, error) {
 	r, err := auth.ParseRole(role)
 	if err != nil {
 		return "", "", err
 	}
-	token, keyID, err := auth.CreateKey(e.db.Store(), name, r)
+	var expiresAt time.Time
+	if expiresAtUnix != 0 {
+		expiresAt = time.Unix(expiresAtUnix, 0).UTC()
+	}
+	token, keyID, err := auth.CreateKeyWithExpiry(e.db.Store(), name, r, expiresAt)
 	return keyID, token, err
 }
 
@@ -154,7 +171,7 @@ func (e *embeddedBackend) ListKeys() ([]keyRow, error) {
 	}
 	out := make([]keyRow, 0, len(recs))
 	for _, r := range recs {
-		out = append(out, keyRow{KeyID: r.KeyID, Name: r.Name, Role: r.Role.String(), CreatedUnix: r.CreatedUnix})
+		out = append(out, keyRow{KeyID: r.KeyID, Name: r.Name, Role: r.Role.String(), CreatedUnix: r.CreatedUnix, ExpiresUnix: r.ExpiresUnix})
 	}
 	return out, nil
 }
@@ -282,31 +299,33 @@ func (r *remoteBackend) Verify() error {
 	return fmt.Errorf("verify is available only for an embedded database; remote verification operations are not implemented")
 }
 
-func (r *remoteBackend) Query(coll, fld string, op query.Op, value string) ([]docRow, error) {
+func (r *remoteBackend) QueryPage(coll, fld string, op query.Op, value string, pageSize int, pageToken string) ([]docRow, string, error) {
 	ctx, cancel := r.ctx()
 	defer cancel()
 	resp, err := r.client.Query(ctx, &pb.QueryRequest{
 		Collection: coll,
 		Filter:     &pb.Filter{Node: &pb.Filter_Cmp{Cmp: &pb.Cmp{Field: fld, Op: toWireOp(op), Value: value}}},
+		PageSize:   int32(pageSize),
+		PageToken:  pageToken,
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	out := make([]docRow, 0, len(resp.GetResults()))
 	for _, d := range resp.GetResults() {
 		out = append(out, docRow{ID: d.GetId(), JSON: d.GetJson()})
 	}
-	return out, nil
+	return out, resp.GetNextPageToken(), nil
 }
 
-func (r *remoteBackend) CreateKey(name, role string) (string, string, error) {
+func (r *remoteBackend) CreateKey(name, role string, expiresAtUnix int64) (string, string, error) {
 	wireRole, err := roleToWire(role)
 	if err != nil {
 		return "", "", err
 	}
 	ctx, cancel := r.ctx()
 	defer cancel()
-	resp, err := r.client.CreateKey(ctx, &pb.CreateKeyRequest{Name: name, Role: wireRole})
+	resp, err := r.client.CreateKey(ctx, &pb.CreateKeyRequest{Name: name, Role: wireRole, ExpiresAtUnix: expiresAtUnix})
 	if err != nil {
 		return "", "", err
 	}
@@ -322,7 +341,7 @@ func (r *remoteBackend) ListKeys() ([]keyRow, error) {
 	}
 	out := make([]keyRow, 0, len(resp.GetKeys()))
 	for _, k := range resp.GetKeys() {
-		out = append(out, keyRow{KeyID: k.GetKeyId(), Name: k.GetName(), Role: roleFromWire(k.GetRole()), CreatedUnix: k.GetCreatedAtUnix()})
+		out = append(out, keyRow{KeyID: k.GetKeyId(), Name: k.GetName(), Role: roleFromWire(k.GetRole()), CreatedUnix: k.GetCreatedAtUnix(), ExpiresUnix: k.GetExpiresAtUnix()})
 	}
 	return out, nil
 }

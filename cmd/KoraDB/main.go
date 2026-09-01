@@ -17,10 +17,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
-	"KoraDB/internal/buildinfo"
-	"KoraDB/internal/query"
+	"github.com/YuvanoLabs/KoraDB/internal/buildinfo"
+	"github.com/YuvanoLabs/KoraDB/internal/query"
 )
 
 func main() {
@@ -363,21 +365,45 @@ func cmdVerify(be backend, args []string) error {
 }
 
 func cmdQuery(be backend, args []string) error {
-	if len(args) != 4 {
-		return fmt.Errorf("usage: query <collection> <field> <op> <value>   (op: == != > >= < <=)")
+	if len(args) < 4 {
+		return fmt.Errorf("usage: query <collection> <field> <op> <value> [--page-size=N] [--page-token=T]   (op: == != > >= < <=)")
 	}
 	coll, fld, opStr, val := args[0], args[1], args[2], args[3]
 	op, err := parseOp(opStr)
 	if err != nil {
 		return err
 	}
-	results, err := be.Query(coll, fld, op, val)
+	pageSize := 0
+	pageToken := ""
+	for _, arg := range args[4:] {
+		switch {
+		case strings.HasPrefix(arg, "--page-size="):
+			pageSize, err = strconv.Atoi(strings.TrimPrefix(arg, "--page-size="))
+			if err != nil || pageSize <= 0 {
+				return fmt.Errorf("query: --page-size must be a positive integer")
+			}
+		case strings.HasPrefix(arg, "--page-token="):
+			pageToken = strings.TrimPrefix(arg, "--page-token=")
+			if pageToken == "" {
+				return fmt.Errorf("query: --page-token must not be empty")
+			}
+		default:
+			return fmt.Errorf("query: unknown flag %q", arg)
+		}
+	}
+	if pageToken != "" && pageSize == 0 {
+		return fmt.Errorf("query: --page-token requires --page-size")
+	}
+	results, nextPageToken, err := be.QueryPage(coll, fld, op, val, pageSize, pageToken)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("%d result(s):\n", len(results))
 	for _, r := range results {
 		fmt.Printf("  [%s] %s\n", r.ID, r.JSON)
+	}
+	if nextPageToken != "" {
+		fmt.Printf("next_page_token=%s\n", nextPageToken)
 	}
 	return nil
 }
@@ -388,10 +414,21 @@ func cmdKey(be backend, args []string) error {
 	}
 	switch args[0] {
 	case "create":
-		if len(args) != 3 {
-			return fmt.Errorf("usage: key create <name> <role>   (role: readonly|readwrite|admin)")
+		if len(args) < 3 {
+			return fmt.Errorf("usage: key create <name> <role> [--expires-at=RFC3339]   (role: readonly|readwrite|admin)")
 		}
-		keyID, token, err := be.CreateKey(args[1], args[2])
+		var expiresAtUnix int64
+		for _, arg := range args[3:] {
+			if !strings.HasPrefix(arg, "--expires-at=") {
+				return fmt.Errorf("key create: unknown flag %q", arg)
+			}
+			expiresAt, err := time.Parse(time.RFC3339, strings.TrimPrefix(arg, "--expires-at="))
+			if err != nil {
+				return fmt.Errorf("key create: --expires-at must be RFC3339: %w", err)
+			}
+			expiresAtUnix = expiresAt.UTC().Unix()
+		}
+		keyID, token, err := be.CreateKey(args[1], args[2], expiresAtUnix)
 		if err != nil {
 			return err
 		}
@@ -403,7 +440,11 @@ func cmdKey(be backend, args []string) error {
 			return err
 		}
 		for _, k := range keys {
-			fmt.Printf("%s\t%s\t%s\n", k.KeyID, k.Role, k.Name)
+			expires := "never"
+			if k.ExpiresUnix != 0 {
+				expires = time.Unix(k.ExpiresUnix, 0).UTC().Format(time.RFC3339)
+			}
+			fmt.Printf("%s\t%s\texpires=%s\t%s\n", k.KeyID, k.Role, expires, k.Name)
 		}
 		return nil
 	case "revoke":
@@ -467,9 +508,10 @@ Commands:
   backup <output.db>                       write a consistent embedded snapshot (no overwrite)
   verify                                   check embedded storage integrity
   version                                  print build identity
-  verify                                   check embedded storage integrity
-  query <collection> <field> <op> <value> query (op: == != > >= < <=)
-  key create <name> <role>                create an API key (admin); role: readonly|readwrite|admin
+  query <collection> <field> <op> <value> [--page-size=N] [--page-token=T]
+                                            query (op: == != > >= < <=)
+  key create <name> <role> [--expires-at=RFC3339]
+                                            create an API key (admin); role: readonly|readwrite|admin
   key list                                list API keys (admin)
   key revoke <key-id>                     revoke an API key (admin)
 `)

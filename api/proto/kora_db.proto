@@ -1,18 +1,14 @@
 syntax = "proto3";
 
-// PRE-RELEASE NAMESPACE. The public release gate requires migration to the
-// approved company-qualified package recorded in product.identity.yaml.
-// Regenerate all committed stubs as one coordinated change after canonical
-// package ownership and legal clearance are complete.
-//
-// KoraDB.v1 is the wire contract for the KoraDB gRPC server. It is a FIXED
+// yuvanolabs.koradb.v1 is the company-qualified wire contract for the KoraDB
+// gRPC server. It is a FIXED
 // schema: documents themselves are carried as JSON strings, because each
 // collection has its own user-defined message type that the server stores as
 // protobuf bytes internally. This keeps one stable service surface while
 // supporting arbitrarily many user schemas.
-package koradb.v1;
+package yuvanolabs.koradb.v1;
 
-option go_package = "KoraDB/api/gen/KoraDBv1;KoraDBv1";
+option go_package = "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1;KoraDBv1";
 
 service KoraDB {
   // Schema management.
@@ -153,9 +149,19 @@ message BoolGroup {
 message QueryRequest {
   string collection = 1;
   Filter filter = 2; // omit to match all documents
+  // A positive value opts into bounded pagination. It must not exceed the
+  // server's published maximum. Zero preserves the legacy unary-query
+  // behavior: the server returns an error rather than a partial result set.
+  int32 page_size = 3;
+  // Opaque token returned by a preceding Query response for this exact
+  // collection and filter. Leave empty for the first page.
+  string page_token = 4;
 }
 message QueryResponse {
   repeated Document results = 1;
+  // Empty when this is the final page or when legacy unary-query behavior was
+  // used. Clients must not inspect or construct this value.
+  string next_page_token = 2;
 }
 message Document {
   string id = 1;
@@ -167,6 +173,8 @@ message Document {
 message CreateKeyRequest {
   string name = 1; // human-readable principal name (for audit), not a secret
   Role role = 2;
+  // Optional UTC Unix timestamp. Zero means the API key does not expire.
+  int64 expires_at_unix = 3;
 }
 message CreateKeyResponse {
   string key_id = 1;
@@ -182,6 +190,7 @@ message KeyInfo {
   string name = 2;
   Role role = 3;
   int64 created_at_unix = 4;
+  int64 expires_at_unix = 5; // zero means the API key does not expire
 }
 
 message RevokeKeyRequest {

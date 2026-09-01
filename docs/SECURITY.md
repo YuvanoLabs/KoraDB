@@ -1,25 +1,33 @@
-# YuvanoLabs KoraDB Security Model
+# YuvanoLabs KoraDB Service Security Model
 
-This describes the security of the KoraDB **gRPC server**. (The in-process engine and local-file
-CLI run in the caller's own process and trust boundary; OS file permissions on the `.db` file are
-the control there.)
+This describes the implemented security controls and release gaps of the
+KoraDB **gRPC server**. KoraDB v1.0.0 is approved for Community general
+availability; see the [Production release plan](PRODUCTION_RELEASE_PLAN.md)
+and [release decision](../RELEASE_DECISION.md) for its published boundaries
+and evidence.
+
+The in-process engine and local-file CLI run in the caller's own process and
+trust boundary. OS file permissions and approved host/disk encryption protect
+the `.db` file in embedded deployments.
 
 ## Principles
 
-- **Secure by default / fail-closed.** `KoraDB-server serve` refuses to start unless TLS is
-  configured *and* at least one API key exists ? unless you explicitly pass `--insecure`
-  (intended only for explicit loopback development; it prints a loud warning and disables both
-  TLS and auth).
+- **Secure by default / fail-closed.** `KoraDB-server serve` refuses to start
+  unless TLS is configured *and* at least one administrator API key exists,
+  unless you explicitly pass `--insecure`. That mode is only for explicit
+  loopback development; it prints a loud warning and disables TLS and auth.
 - **Secured server mode couples authentication to TLS.** The authenticated server configuration
   cannot run as plaintext. The CLI refuses to attach a supplied token to a plaintext connection.
 - **Default-deny authorization.** A gRPC method with no entry in the RBAC policy is denied to
   everyone, including admins. Adding an RPC and forgetting to classify it fails closed.
-- **Audit without exposure.** Every request is logged with who/method/outcome/peer/latency and
-  **never** the document JSON or query values (which may contain PII / classified data).
+- **Audit without exposure.** Every unary request is logged as a JSON record
+  with who, method, outcome, peer, and latency, and **never**
+  the document JSON or query values (which may contain PII or classified data).
 
 ## Transport: TLS and mTLS
 
-- `--tls-cert` / `--tls-key`: server certificate and key (TLS ? 1.2). Required unless `--insecure`.
+- `--tls-cert` / `--tls-key`: server certificate and key (TLS 1.2 or later).
+  Required unless `--insecure`.
 - `--tls-client-ca`: when set, the server **requires and verifies client certificates** (mTLS)
   signed by that CA.
 - `gencert` produces a dev CA + server cert. **Production should use your organization's CA/PKI**,
@@ -30,15 +38,16 @@ dedicated development client-certificate workflow before relying on mTLS for mul
 
 ## Authentication: API keys
 
-- Tokens look like `kdb_<keyID>_<secret>` ? 64 bits of key id + 256 bits of secret. The `kdb_`
+- Tokens look like `kdb_<keyID>_<secret>`: 64 bits of key ID plus 256 bits of
+  secret. The `kdb_`
   prefix lets secret scanners flag leaks.
 - Only `SHA-256(secret)` is stored, never the secret. Verification is a constant-time compare.
   A fast hash is correct here: a 256-bit random secret cannot be brute-forced, so the password
   work-factor that bcrypt/argon2 provide adds latency without security benefit.
 - The token is shown **once** at creation and cannot be recovered.
 - The CLI presents tokens in the gRPC `authorization` metadata as `Bearer <token>`.
-- The server currently also accepts a raw token in that metadata field. Tightening this to the
-  documented Bearer form is recommended before a stable release.
+- The server requires exactly one `Bearer <token>` value in the authorization
+  metadata. Raw tokens and duplicate authorization values are rejected.
 
 ### Bootstrapping the first key
 
@@ -49,7 +58,12 @@ database to add a key. Therefore:
   `admin` role: `KoraDB-server bootstrap --db data.db --role admin`.
 - All **subsequent** key management happens over the running server via admin-only RPCs
   (`CreateKey` / `ListKeys` / `RevokeKey`, exposed as `KoraDB key create|list|revoke`).
-  **Revocation takes effect immediately** ? no restart.
+  **Revocation takes effect immediately**; no restart is required.
+
+The current API supports a manual rotation procedure—create a replacement key,
+move the workload to it, then revoke the old key—and each key may carry an
+optional UTC expiry. It has no automated rotation deadline, per-key scope, or
+external secret-manager integration.
 
 ## Authorization: roles (RBAC)
 
@@ -63,39 +77,77 @@ Coarse, ordered roles; higher includes lower:
 
 The policy lives in `internal/auth/rbac.go` and is consulted fail-closed.
 
-## Audit log
+## Audit and resource limits
 
-One structured line per request, e.g.:
+One JSON record per request, e.g.:
 
 ```
-audit method=Insert principal=reporting/readonly peer=10.0.0.4:55512 code=PermissionDenied dur=0s
+{"timestamp":"2026-08-31T12:00:00Z","method":"Insert","principal":"reporting/readonly","peer":"10.0.0.4:55512","code":"PermissionDenied","duration_ms":0}
 ```
 
-Includes failed authentication/authorization attempts. Contains **no** request/response payloads.
-(Forwarding this to a SIEM / structured sink is a roadmap item.)
+Includes failed authentication and authorization attempts. It contains **no**
+request or response payloads. It is a local structured log, not a tamper-evident
+audit trail or SIEM integration.
+
+The server enforces these preview safety bounds:
+
+- gRPC receive and send messages are limited to 4 MiB.
+- Legacy unary queries materialize at most 1,000 matching documents. On
+  overflow they return an error, never a partial result set. Clients can opt
+  into opaque continuation-token pages of up to 1,000 documents.
+- A query filter is limited to 32 nesting levels and 64 comparison predicates.
+- The server defaults to a 30-second unary-request deadline, 128 concurrent
+  unary requests, and a shared 200 requests/second token bucket with a burst
+  of 400. Operators can tune these with `--max-request-duration`,
+  `--max-concurrent-requests`, `--max-requests-per-second`, and
+  `--request-rate-burst`; a zero request rate is an explicit development-only
+  opt-out.
+- Query scans and page materialization observe request cancellation. Storage
+  transactions remain atomic and may finish their individual operation before
+  a cancelled request returns.
+
+There are no server-side connection limits, per-principal/tenant quotas, or
+brute-force-specific controls. The shared rate guard is an overload control,
+not multi-tenant isolation.
+
+## Metrics endpoint
+
+By default, the server publishes process-local Prometheus metrics at
+`http://127.0.0.1:9090/metrics`. It exports only method, gRPC outcome code,
+request count, latency, and in-flight work; it never labels metrics with
+credentials, principals, document IDs, or query values. The endpoint accepts
+only an explicit numeric loopback address. Set `--metrics-addr=` to disable it
+or collect it through a local agent/authenticated proxy; do not expose it
+directly to untrusted networks.
 
 ## What is verified by tests
 
 `internal/auth` and `test/security_test.go` assert the **denials**, which are the actual feature:
 
-- unauthenticated request ? `Unauthenticated`
-- invalid / tampered / unknown token ? `Unauthenticated`
-- revoked key ? `Unauthenticated` (immediately)
-- `readonly` calling a write or admin method ? `PermissionDenied`
-- unmapped method ? denied even for admin
-- plaintext client against a TLS server ? connection refused
-- mTLS server + client with no client certificate ? rejected
+- unauthenticated request returns `Unauthenticated`
+- invalid, tampered, or unknown token returns `Unauthenticated`
+- a revoked key returns `Unauthenticated` immediately
+- `readonly` calling a write or admin method returns `PermissionDenied`
+- an unmapped method is denied even for an administrator
+- a plaintext client cannot connect to a TLS server
+- an mTLS server rejects a client with no certificate
 
-## Not yet covered (roadmap ? do not assume these exist)
+## Required before a production security claim
 
-- Key **rotation** / expiry; per-key scopes; per-collection ACLs (only coarse roles today).
-- Secret management integration (Vault/KMS); at-rest encryption of the `.db` file.
-- Rate limiting / quota; request size limits; brute-force lockout.
-- Audit forwarding to a SIEM; tamper-evident audit storage.
-- Stream/`Watch` RPC interceptors (no streaming RPCs exist yet).
-- Validation/escaping of principal names before line-oriented audit output.
-- Certificate hot reload and documented certificate-rotation procedures.
-- Limits for document size, query result count/depth, concurrent connections, and execution time.
+- Scoped credentials and the approved identity integrations required by the
+  supported deployment profile. Roles are coarse today; there are no
+  per-collection ACLs or automated rotation workflow.
+- Secret-manager integration and an approved at-rest-encryption/key-recovery
+  design for the `.db` file.
+- Connection limits, per-principal/tenant resource quotas, and brute-force
+  controls, plus capacity evidence for the implemented request controls.
+- Distributed tracing, alerting, SIEM/audit export, and tamper-evident audit
+  storage. Loopback Prometheus request metrics are available today.
+- Certificate rotation/reload procedures and mTLS identity-to-authorization
+  mapping.
+- A formal review of streaming interceptors before a streaming RPC is added.
+- An independent threat model, security review, vulnerability-management
+  process, incident procedure, and retained test evidence.
 
 ## Known prototype hazards
 
@@ -106,9 +158,11 @@ Includes failed authentication/authorization attempts. Contains **no** request/r
 - Bootstrap must create an admin key, and KoraDB refuses to revoke the final admin key.
 - The database file contains documents, schemas, indexes, and API-key hashes but is not encrypted
   by KoraDB. Protect it with local-disk permissions and approved disk/volume encryption.
-- The API has no pagination. Unary queries are capped at 1,000 matching documents; gRPC requests
-  and responses are capped at 4 MiB; filter trees are limited to 32 levels and 64 predicates.
-  Full connection, rate, and execution-time controls remain pending, so do not expose it to
+- Legacy unary queries are capped at 1,000 matching documents; gRPC requests
+  and responses are capped at 4 MiB; filter trees are limited to 32 levels and
+  64 predicates. Explicit continuation-token pagination, request deadlines,
+  bounded in-flight work, and a shared rate guard are available. Connection
+  and tenant-specific controls remain pending, so do not expose it to
   untrusted tenants.
 
 **Until these land, treat KoraDB as appropriate for trusted/internal networks with TLS, not as a

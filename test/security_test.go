@@ -16,11 +16,11 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	pb "KoraDB/api/gen/KoraDBv1"
-	"KoraDB/internal/auth"
-	"KoraDB/internal/certgen"
-	"KoraDB/internal/engine"
-	"KoraDB/internal/server"
+	pb "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1"
+	"github.com/YuvanoLabs/KoraDB/internal/auth"
+	"github.com/YuvanoLabs/KoraDB/internal/certgen"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/server"
 )
 
 // secured starts a TLS + auth gRPC server on loopback with ephemeral in-memory
@@ -144,6 +144,47 @@ func TestAuthDenials(t *testing.T) {
 	assertCode(t, "revoked key", err, codes.Unauthenticated)
 }
 
+func TestServiceKeyExpiryIsValidatedAndReported(t *testing.T) {
+	addr, ca, db := secured(t, false)
+	client := tlsClient(t, addr, ca)
+	adminToken, _, err := auth.CreateKey(db.Store(), "admin", auth.RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expiresAt := time.Now().Add(time.Hour).UTC().Unix()
+	created, err := client.CreateKey(withToken(adminToken), &pb.CreateKeyRequest{
+		Name:          "short-lived-reader",
+		Role:          pb.Role_ROLE_READONLY,
+		ExpiresAtUnix: expiresAt,
+	})
+	if err != nil {
+		t.Fatalf("create expiring key: %v", err)
+	}
+	keys, err := client.ListKeys(withToken(adminToken), &pb.ListKeysRequest{})
+	if err != nil {
+		t.Fatalf("list keys: %v", err)
+	}
+	found := false
+	for _, key := range keys.GetKeys() {
+		if key.GetKeyId() == created.GetKeyId() {
+			found = true
+			if key.GetExpiresAtUnix() != expiresAt {
+				t.Fatalf("expiry = %d, want %d", key.GetExpiresAtUnix(), expiresAt)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("new key %q was not listed", created.GetKeyId())
+	}
+	_, err = client.CreateKey(withToken(adminToken), &pb.CreateKeyRequest{
+		Name:          "expired-reader",
+		Role:          pb.Role_ROLE_READONLY,
+		ExpiresAtUnix: time.Now().Add(-time.Hour).Unix(),
+	})
+	assertCode(t, "past expiry", err, codes.InvalidArgument)
+}
+
 // TestPlaintextClientRejectedByTLSServer proves tokens can't be sent in the
 // clear: a non-TLS client cannot talk to the TLS server.
 func TestPlaintextClientRejectedByTLSServer(t *testing.T) {
@@ -193,4 +234,3 @@ func repeat64() string {
 	}
 	return string(b)
 }
-

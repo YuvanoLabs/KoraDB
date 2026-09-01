@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	pb "KoraDB/api/gen/KoraDBv1"
+	pb "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1"
 )
 
 func TestToFilterRejectsUnsetFilterNode(t *testing.T) {

@@ -67,7 +67,7 @@ if (-not $goModuleMatch.Success -or $goModuleMatch.Groups["value"].Value -ne $pl
   $blockers += "go.mod module does not equal '$plannedGoModule'"
 }
 
-$proto = Get-Content -LiteralPath (Join-Path $root "api/proto/KoraDB.proto") -Raw
+$proto = Get-Content -LiteralPath (Join-Path $root "api/proto/kora_db.proto") -Raw
 $protoPackagePattern = "(?m)^package\s+" + [regex]::Escape($plannedProtoPackage) + "\s*;"
 $protoGoPackagePattern =
   "(?m)^option\s+go_package\s*=\s*""" +

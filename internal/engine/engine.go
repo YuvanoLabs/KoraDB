@@ -24,9 +24,9 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"KoraDB/internal/index"
-	"KoraDB/internal/schema"
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/index"
+	"github.com/YuvanoLabs/KoraDB/internal/schema"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 // ErrNotFound is returned when a collection or document does not exist.

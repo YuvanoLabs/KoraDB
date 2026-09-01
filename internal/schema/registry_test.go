@@ -7,7 +7,7 @@ import (
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 const userV1 = `

@@ -1,18 +1,28 @@
-# KoraDB Enterprise Readiness
+# KoraDB Production Readiness
 
-This document is the release gate for KoraDB. A feature is not considered
-enterprise-ready merely because source code exists: its contract, security
-properties, operational behavior, packaging, documentation, and release
-evidence must all be complete.
+This document defines the non-negotiable evidence behind any production claim.
+A feature is not production-ready merely because source code exists: its
+contract, security properties, operational behavior, packaging, documentation,
+and release evidence must all be complete. The ordered delivery plan and
+release-variant-specific gates are in
+[Production release plan](PRODUCTION_RELEASE_PLAN.md).
 
 KoraDB is an embedded database from YuvanoLabs. The supported deployment
 model is in-process use through a language SDK. The optional gRPC server is
 for controlled service deployments; it is not required for embedded use.
 
+KoraDB is one Community product. Its release variants are developer
+packages/DLLs and operator installers; embedded and secured service are
+deployment modes, not editions. This document defines the production-quality
+bar for the one product and does not define a second paid or feature-gated
+edition.
+
 ## Current Release Position
 
-KoraDB is in engineering preview. It must not be represented as generally
-available, production-certified, or supported for regulated workloads yet.
+KoraDB v1.0.0 is approved for Community general availability. It remains a
+single-node product with the explicit deployment, recovery, and security
+boundaries recorded in [RELEASE_DECISION.md](../RELEASE_DECISION.md); it is not
+automatically suitable for regulated workloads.
 
 Implemented foundation:
 
@@ -23,26 +33,32 @@ Implemented foundation:
   .NET, and Node.js bindings. It is not a published compatibility promise.
 - The server supports authenticated gRPC deployment, a standard health
   endpoint, bounded request and response sizes, bounded filter complexity,
-  and a safe loopback-only explicit insecure mode.
-- Query results have a default maximum of 1,000 documents. Pagination is not
-  implemented, so a limit error returns no partial result set.
+  JSON payload-free audit records, server deadlines, shared rate limiting,
+  bounded in-flight requests, and a safe loopback-only explicit insecure mode.
+- API keys support immediate revocation and optional UTC expiry.
+- Legacy unary query results have a default maximum of 1,000 documents and
+  return no partial result set on overflow. Explicit continuation-token
+  pagination is available through the Go SDK, native ABI, gRPC API, and CLI.
 - Schema registration is atomic, records immutable history, rejects known
   incompatible changes, and resolves imports from the active schema catalog.
 
-## Non-Negotiable GA Gates
+## Post-release qualification
 
-All items in this section must be complete before a general-availability
-announcement or a production support commitment.
+These items govern future support commitments and claims beyond the approved
+v1.0.0 single-node product boundary.
 
 ### Product, legal, and ecosystem
 
-- Confirm legal clearance and ownership of the KoraDB name in every target
-  market.
-- Reserve and verify the canonical source, package, container, and release
-  namespaces before publishing clients. Do not publish public packages under
-  the temporary `KoraDB` module path.
-- Select and approve a software license, contributor policy, privacy policy,
-  security contact, support terms, and end-of-life policy.
+- Complete formal clearance of the distinct KoraDB name in every target
+  market. YuvanoLabs ownership and canonical source/module/protobuf coordinates
+  are recorded in `product.identity.yaml`.
+- Enable the public GitHub repository controls for the established YuvanoLabs
+  owner, including private vulnerability reporting, protected branches, and
+  release permissions.
+- Keep the published Apache-2.0 [LICENSE](../LICENSE), contributor policy,
+  [privacy notice](../PRIVACY.md), [security contact](../SECURITY.md),
+  [support terms](../SUPPORT.md), and [lifecycle policy](../LIFECYCLE.md)
+  current as release evidence.
 - Publish an accurate compatibility and support matrix for operating systems,
   CPU architectures, Go versions, and language runtimes.
 
@@ -62,15 +78,15 @@ announcement or a production support commitment.
 
 - Add TLS certificate lifecycle guidance and production defaults, including
   rotation and a secure secret-store integration.
-- Add API-key rotation, expiration, scoped permissions, audit events, and
-  operator recovery procedures. The current API-key model is not a complete
-  enterprise identity system.
+- Add automated API-key rotation, scoped permissions, audit events, and
+  operator recovery procedures. Keys can have an optional expiry today, but
+  the current API-key model is not a complete production identity system.
 - Provide at-rest encryption with externally managed keys or clearly document
   why a deployment uses storage-layer encryption instead.
 - Complete a threat model, dependency and vulnerability management process,
   secure development lifecycle, independent review plan, and incident
   response process.
-- Evaluate and implement required enterprise identity integrations, such as
+- Evaluate and implement required production identity integrations, such as
   OIDC, mTLS, LDAP, or SSO, based on the support commitment.
 
 ### Availability, scale, and operations
@@ -79,11 +95,13 @@ announcement or a production support commitment.
   targets from measured workloads; publish the test hardware and methodology.
 - Decide whether high availability, replication, read replicas, and sharding
   are product commitments. They are not currently available.
-- Add structured logs, metrics, tracing, audit sinks, alert guidance, and a
-  diagnostics bundle that excludes secrets by default.
+- Qualify the implemented JSON logs and loopback Prometheus metrics; add
+  tracing, audit sinks, alert guidance, and a diagnostics bundle that excludes
+  secrets by default.
 - Provide upgrade, downgrade, rollback, configuration, and service-management
   runbooks for each supported operating system.
-- Add cancellation, deadlines, quotas, pagination, batching, and index
+- Qualify the implemented deadline, cancellation, shared-rate, concurrency,
+  and pagination controls; add per-principal quotas, batching, and index
   lifecycle APIs where service workloads require them.
 
 ### Language packages and developer experience
@@ -123,12 +141,13 @@ Preview can progress to a named release candidate once the project has:
 - A tested restore procedure and recovery documentation.
 - At least one supported package with canonical coordinates and an explicit
   compatibility policy.
-- A public statement of known limits, including no replication, no
-  pagination, no at-rest encryption, and no published non-Go language SDK.
+- A public statement of known limits, including no replication, no at-rest
+  encryption, no stable published non-Go language SDK, and the single-node
+  capacity boundaries.
 
 ## Claiming Support
 
 Marketing, documentation, package metadata, and release notes must use the
-same status language as this document. Do not use the terms "enterprise-ready",
+same status language as this document. Do not use the terms
 "production-ready", "highly available", "secure by default", or "GA" until
 their corresponding gates have objective, retained completion evidence.

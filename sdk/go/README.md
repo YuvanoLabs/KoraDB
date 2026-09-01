@@ -6,16 +6,16 @@ KoraDB server, port, container, or external runtime.
 
 ## Current status
 
-This SDK is pre-release and is built from this repository while KoraDB's
-canonical public Go module path, compatibility policy, release signing, and
-package publication are completed. Do not depend on an unversioned source path
-as a production package yet.
+This SDK uses the canonical source module
+`github.com/YuvanoLabs/KoraDB`, but remains pre-release until its public API
+compatibility policy, signed release, and package-install evidence are
+complete. Do not depend on it as a production package yet.
 
-Its API covers schema registration, collection creation, CRUD, scalar queries,
-consistent snapshot export, and storage-integrity verification using ProtoJSON.
-The implementation deliberately does not claim stable pagination, transactions,
-restore verification, remote-provider parity, or typed protobuf payloads until
-those contracts are complete.
+Its API covers schema registration, collection creation, CRUD, scalar queries
+with opaque continuation-token pagination, consistent snapshot export, and
+storage-integrity verification using ProtoJSON. The implementation deliberately
+does not claim transactions, restore verification, remote-provider parity, or
+typed protobuf payloads until those contracts are complete.
 
 See [language integrations](../../docs/INTEGRATIONS.md) for the multi-language
 package plan and [the productization program](../../docs/PRODUCTIZATION_PROGRAM.md)

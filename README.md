@@ -18,17 +18,44 @@ Both modes use the same collection, schema, document, query, and file-format
 semantics. A database file is a single-writer resource; use service mode rather
 than sharing one file between processes or hosts.
 
+## Release status
+
+KoraDB v1.0.0 is approved for Community general availability by YuvanoLabs.
+Official artifacts are published only by the protected `v1.0.0` tag workflow;
+development builds must not be treated as official artifacts.
+KoraDB is one Community product. It will be released through two delivery
+variants: developer packages/DLLs and operator installers. Embedded and
+secured service are deployment modes available from the same product, not
+separate editions. Their production release gates are in
+[Production release plan](docs/PRODUCTION_RELEASE_PLAN.md); do not make
+availability, encryption, HA, identity, or language-package claims beyond the
+evidence recorded there.
+
+KoraDB is published under [Apache-2.0](LICENSE). Public contribution,
+security, support, privacy, governance, and lifecycle policies are available
+in [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md),
+[SUPPORT.md](SUPPORT.md), [PRIVACY.md](PRIVACY.md),
+[GOVERNANCE.md](GOVERNANCE.md), and [LIFECYCLE.md](LIFECYCLE.md).
+
+KoraDB is published under [Apache-2.0](LICENSE). Public contribution,
+security, support, privacy, governance, and lifecycle policies are available
+in [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md),
+[SUPPORT.md](SUPPORT.md), [PRIVACY.md](PRIVACY.md),
+[GOVERNANCE.md](GOVERNANCE.md), and [LIFECYCLE.md](LIFECYCLE.md).
+
 ## What KoraDB provides
 
 - Protobuf schema registration and immutable schema history.
 - Atomic collection and document CRUD operations.
-- Primary keys, persistent secondary indexes, and bounded scalar queries.
+- Primary keys, persistent secondary indexes, and bounded scalar queries with
+  opaque continuation-token pagination.
 - Consistent database snapshots, integrity verification, and safe offline
   restore with explicit rollback protection.
 - An embedded Go SDK source package and a versioned native C ABI foundation for
   language bindings.
 - An optional gRPC service with TLS/mTLS, API-key authentication, role-based
-  access control, request limits, filter limits, health checks, and audit logs.
+  access control, request limits, filter limits, health checks, JSON audit
+  logs, and loopback-only Prometheus metrics.
 
 ## Quick start: embedded database
 
@@ -114,7 +141,8 @@ Layer 0  storage      bbolt-backed durable database file
 ```
 
 Read [Architecture](docs/ARCHITECTURE.md), [Schema evolution](docs/SCHEMA_EVOLUTION.md),
-[Security](docs/SECURITY.md), and [Operations and restore](docs/RESTORE.md) for
+[Security](docs/SECURITY.md), [Operations](docs/OPERATIONS.md), and
+[Offline restore](docs/RESTORE.md) for
 the corresponding contracts.
 
 ## Use cases
@@ -145,5 +173,10 @@ and build timestamp. Release builds produce checksums for their artifacts.
 - [Documentation index](docs/README.md)
 - [Product architecture and adoption](docs/PRODUCT_ASSESSMENT.md)
 - [Language integrations](docs/INTEGRATIONS.md)
+- [Installation](docs/INSTALLATION.md)
+- [Operations runbook](docs/OPERATIONS.md)
+- [Production release plan](docs/PRODUCTION_RELEASE_PLAN.md)
+- [Production readiness](docs/ENTERPRISE_READINESS.md)
 - [Product roadmap](docs/ROADMAP.md)
 - [Productization program](docs/PRODUCTIZATION_PROGRAM.md)
+- [Public-release owner checklist](PUBLIC_REPOSITORY_CHECKLIST.md)

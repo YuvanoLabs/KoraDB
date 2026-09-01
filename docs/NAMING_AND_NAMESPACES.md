@@ -18,7 +18,7 @@ product documentation, examples, package metadata, and release material.
 - Service: `KoraDB-server`
 - Offline restore: `KoraDB-restore`
 - API-key prefix: `kdb_`
-- gRPC protocol package: `koradb.v1`
+- gRPC protocol package: `yuvanolabs.koradb.v1`
 - Protocol source: `api/proto/kora_db.proto`
 
 These names form the current KoraDB product surface and must be applied
@@ -27,10 +27,11 @@ language integrations.
 
 ## Release coordination
 
-Public registry ownership, legal review, license selection, artifact signing,
-and release approvals are release-management responsibilities. They are
-maintained as internal release records in `product.identity.yaml` and release
-automation rather than presented as product positioning.
+KoraDB uses the same YuvanoLabs ownership, Apache-2.0 licensing, and public
+repository policy baseline as the released Causentra product. Formal clearance
+of the distinct KoraDB product name, artifact signing, and release approvals
+remain release-management responsibilities and are tracked in
+`product.identity.yaml` and release automation.
 
 When public package coordinates are approved, migrate all import, artifact, and
 registry metadata in one versioned release. Do not publish placeholder packages

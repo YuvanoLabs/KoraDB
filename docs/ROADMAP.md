@@ -13,12 +13,13 @@ distributed-system work.
   transactional secondary indexes.
 - Runtime protobuf schema registration, atomic updates, immutable history, and
   compatibility enforcement.
-- Embedded CLI, secured gRPC server, TLS/mTLS, API keys, role-based access,
-  health checks, request limits, and audit logging.
-- Embedded Go SDK source, native C ABI source, database snapshots, verification,
-  safe offline restore, and version metadata.
-- Automated source checks for tests, vet, builds, protocol linting, and native
-  ABI compilation.
+- Embedded CLI, secured gRPC server, TLS/mTLS, expiring API keys, role-based
+  access, health checks, JSON audit logs, request deadlines, concurrency and
+  shared-rate limits, and opaque query pagination.
+- Embedded Go SDK source, native C ABI source, database snapshots,
+  verification, safe offline restore, and version metadata.
+- Automated source checks for tests, vet, builds, protocol linting, native DLL
+  compilation, and a C-consumer ABI smoke test.
 
 ## Current delivery programs
 
@@ -32,19 +33,22 @@ distributed-system work.
 
 ### Query and data operations
 
-- Add continuation-token pagination for bounded result delivery.
+- Continue to validate continuation-token pagination under large datasets and
+  concurrent-writer workloads.
 - Add batch and transaction-facing APIs where they preserve the single-node
   durability model.
 - Define index lifecycle, diagnostics, and maintenance operations.
 - Add compaction and repair guidance with clear operator safeguards.
 
-### Enterprise operations
+### Production operations
 
-- Add structured metrics, tracing, diagnostics bundles, and audit export.
+- Qualify the implemented loopback Prometheus metrics; add distributed
+  tracing, diagnostics bundles, and audit export.
 - Publish storage sizing, performance, filesystem, backup retention, and
   recovery objectives from measured supported environments.
-- Expand identity and secret operations with key rotation, expiration, scoped
-  permissions, and organization-approved identity integrations.
+- Expand identity and secret operations with automated key rotation, scoped
+  permissions, and organization-approved identity integrations. Optional
+  per-key expiry is available today.
 
 ### Release engineering
 

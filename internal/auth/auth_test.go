@@ -3,8 +3,9 @@ package auth
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 func tempStore(t *testing.T) *storage.Store {
@@ -15,6 +16,31 @@ func tempStore(t *testing.T) *storage.Store {
 	}
 	t.Cleanup(func() { st.Close() })
 	return st
+}
+
+func TestExpiringKeyIsRejectedAfterItsExpiry(t *testing.T) {
+	st := tempStore(t)
+	expiresAt := time.Now().Add(time.Hour).UTC().Truncate(time.Second)
+	token, _, err := CreateKeyWithExpiry(st, "temporary", RoleReadOnly, expiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := authenticateAt(st, token, expiresAt.Add(-time.Second)); err != nil {
+		t.Fatalf("key before expiry: %v", err)
+	}
+	if _, err := authenticateAt(st, token, expiresAt); err != ErrInvalidToken {
+		t.Fatalf("key at expiry = %v, want ErrInvalidToken", err)
+	}
+	keys, err := List(st)
+	if err != nil || len(keys) != 1 || keys[0].ExpiresUnix != expiresAt.Unix() {
+		t.Fatalf("listed expiry = %#v, %v", keys, err)
+	}
+}
+
+func TestCreateKeyRejectsPastExpiry(t *testing.T) {
+	if _, _, err := CreateKeyWithExpiry(tempStore(t), "temporary", RoleReadOnly, time.Now().Add(-time.Second)); err == nil {
+		t.Fatal("expected past expiry to be rejected")
+	}
 }
 
 func TestKeyRoundTrip(t *testing.T) {
@@ -118,23 +144,23 @@ func TestRBACFailClosed(t *testing.T) {
 	admin := &Principal{Role: RoleAdmin}
 
 	// Readonly can read but not write or admin.
-	mustAllow(t, ro, "/KoraDB.v1.KoraDB/Get")
-	mustDeny(t, ro, "/KoraDB.v1.KoraDB/Insert")
-	mustDeny(t, ro, "/KoraDB.v1.KoraDB/CreateKey")
+	mustAllow(t, ro, "/yuvanolabs.koradb.v1.KoraDB/Get")
+	mustDeny(t, ro, "/yuvanolabs.koradb.v1.KoraDB/Insert")
+	mustDeny(t, ro, "/yuvanolabs.koradb.v1.KoraDB/CreateKey")
 
 	// Readwrite can read+write but not admin.
-	mustAllow(t, rw, "/KoraDB.v1.KoraDB/Insert")
-	mustAllow(t, rw, "/KoraDB.v1.KoraDB/Get")
-	mustDeny(t, rw, "/KoraDB.v1.KoraDB/PutSchema")
+	mustAllow(t, rw, "/yuvanolabs.koradb.v1.KoraDB/Insert")
+	mustAllow(t, rw, "/yuvanolabs.koradb.v1.KoraDB/Get")
+	mustDeny(t, rw, "/yuvanolabs.koradb.v1.KoraDB/PutSchema")
 
 	// Admin can do everything mapped.
-	mustAllow(t, admin, "/KoraDB.v1.KoraDB/PutSchema")
-	mustAllow(t, admin, "/KoraDB.v1.KoraDB/RevokeKey")
+	mustAllow(t, admin, "/yuvanolabs.koradb.v1.KoraDB/PutSchema")
+	mustAllow(t, admin, "/yuvanolabs.koradb.v1.KoraDB/RevokeKey")
 
 	// Fail-closed: an UNMAPPED method is denied even for admin.
-	mustDeny(t, admin, "/KoraDB.v1.KoraDB/SomeFutureMethod")
+	mustDeny(t, admin, "/yuvanolabs.koradb.v1.KoraDB/SomeFutureMethod")
 	// A nil principal is denied.
-	if (*Principal)(nil).Can("/KoraDB.v1.KoraDB/Get") {
+	if (*Principal)(nil).Can("/yuvanolabs.koradb.v1.KoraDB/Get") {
 		t.Fatal("nil principal must be denied")
 	}
 }
@@ -159,4 +185,3 @@ func repeat(s string, n int) string {
 	}
 	return string(out)
 }
-

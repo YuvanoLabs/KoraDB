@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "KoraDB/api/gen/KoraDBv1"
-	"KoraDB/internal/engine"
-	"KoraDB/internal/server"
+	pb "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/server"
 )
 
 const userProto = `
@@ -100,6 +100,34 @@ func TestGRPCEndToEnd(t *testing.T) {
 	}
 	if len(qr.GetResults()) != 2 {
 		t.Fatalf("query city==NYC returned %d, want 2", len(qr.GetResults()))
+	}
+
+	// 5b. The same query can opt into an opaque continuation-token page.
+	firstPage, err := client.Query(ctx, &pb.QueryRequest{
+		Collection: "users",
+		Filter:     &pb.Filter{Node: &pb.Filter_Cmp{Cmp: &pb.Cmp{Field: "city", Op: pb.Op_OP_EQ, Value: "NYC"}}},
+		PageSize:   1,
+	})
+	if err != nil {
+		t.Fatalf("first paged query: %v", err)
+	}
+	if len(firstPage.GetResults()) != 1 || firstPage.GetNextPageToken() == "" {
+		t.Fatalf("first paged query = %#v, want one result and continuation token", firstPage)
+	}
+	secondPage, err := client.Query(ctx, &pb.QueryRequest{
+		Collection: "users",
+		Filter:     &pb.Filter{Node: &pb.Filter_Cmp{Cmp: &pb.Cmp{Field: "city", Op: pb.Op_OP_EQ, Value: "NYC"}}},
+		PageSize:   1,
+		PageToken:  firstPage.GetNextPageToken(),
+	})
+	if err != nil {
+		t.Fatalf("second paged query: %v", err)
+	}
+	if len(secondPage.GetResults()) != 1 || secondPage.GetNextPageToken() != "" {
+		t.Fatalf("second paged query = %#v, want one final result", secondPage)
+	}
+	if firstPage.GetResults()[0].GetId() == secondPage.GetResults()[0].GetId() {
+		t.Fatal("paged query returned a duplicate document")
 	}
 
 	// 6. Schema evolution over the wire: add a field, old docs still readable.

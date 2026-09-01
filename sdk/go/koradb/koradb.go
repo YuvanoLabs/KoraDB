@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"io"
 
-	"KoraDB/internal/buildinfo"
-	"KoraDB/internal/engine"
-	"KoraDB/internal/query"
+	"github.com/YuvanoLabs/KoraDB/internal/buildinfo"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/query"
 )
 
 var (
@@ -235,25 +235,47 @@ type Document struct {
 	JSON []byte
 }
 
+// QueryPage is one bounded page returned by QueryPageJSON. NextPageToken is
+// opaque; provide it unchanged to the next call with the same query to resume
+// after the final document in Documents. An empty token marks the last page.
+type QueryPage struct {
+	Documents     []Document
+	NextPageToken string
+}
+
 // QueryJSON runs one scalar predicate. More complex filter trees, pagination,
 // projections, sorting, and typed query values are intentionally withheld from
 // this pre-release API until their compatibility and resource-limit contracts
 // are complete.
 func (c *Collection) QueryJSON(ctx context.Context, field string, op ComparisonOperator, value string) ([]Document, error) {
-	if err := contextError(ctx); err != nil {
+	page, err := c.QueryPageJSON(ctx, field, op, value, query.DefaultResultLimit, "")
+	if err != nil {
 		return nil, err
+	}
+	if page.NextPageToken != "" {
+		return nil, &query.ResultLimitError{Limit: query.DefaultResultLimit}
+	}
+	return page.Documents, nil
+}
+
+// QueryPageJSON runs one scalar predicate and returns at most pageSize
+// documents. pageToken must be empty for the first page or the opaque token
+// from a previous call with the same collection and predicate.
+func (c *Collection) QueryPageJSON(ctx context.Context, field string, op ComparisonOperator, value string, pageSize int, pageToken string) (QueryPage, error) {
+	if err := contextError(ctx); err != nil {
+		return QueryPage{}, err
 	}
 	engineOp, err := toEngineOp(op)
 	if err != nil {
-		return nil, err
+		return QueryPage{}, err
 	}
-	results, err := query.Execute(c.db.db, c.name, query.Cmp{Field: field, Op: engineOp, Value: value})
+	page, err := query.ExecutePage(c.db.db, c.name, query.Cmp{Field: field, Op: engineOp, Value: value}, pageSize, pageToken)
 	if err != nil {
-		return nil, err
+		return QueryPage{}, err
 	}
-	out := make([]Document, 0, len(results))
-	for _, result := range results {
-		out = append(out, Document{ID: result.ID, JSON: append([]byte(nil), result.JSON...)})
+	out := QueryPage{Documents: make([]Document, 0, len(page.Results)), NextPageToken: page.NextPageToken}
+	for _, result := range page.Results {
+		out.Documents = append(out.Documents, Document{ID: result.ID, JSON: append([]byte(nil), result.JSON...)})
 	}
 	return out, nil
 }

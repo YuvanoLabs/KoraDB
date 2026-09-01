@@ -1,4 +1,4 @@
-module KoraDB
+module github.com/YuvanoLabs/KoraDB
 
 go 1.26.4
 

@@ -72,6 +72,22 @@ KORADB_API const char *KoraDBQueryJSON(
     const char *value,
     char **out_results_json);
 
+/*
+ * Returns one bounded result page. page_token is optional (null or empty for
+ * the first page); the non-null out_next_page_token string is opaque and must
+ * be released with KoraDBFreeString. It is empty on the final page.
+ */
+KORADB_API const char *KoraDBQueryPageJSON(
+    KoraDBHandle handle,
+    const char *collection,
+    const char *field,
+    const char *operator_name,
+    const char *value,
+    int32_t page_size,
+    const char *page_token,
+    char **out_results_json,
+    char **out_next_page_token);
+
 #ifdef __cplusplus
 }
 #endif

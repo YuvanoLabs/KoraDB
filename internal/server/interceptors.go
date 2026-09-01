@@ -2,8 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"log"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -12,8 +15,8 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
-	"KoraDB/internal/auth"
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/auth"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 type principalCtxKey struct{}
@@ -28,6 +31,124 @@ type principalCtxKey struct{}
 type principalHolder struct{ p *auth.Principal }
 
 type holderCtxKey struct{}
+
+var auditLogger = log.New(os.Stderr, "", 0)
+
+type auditRecord struct {
+	Timestamp  string `json:"timestamp"`
+	Method     string `json:"method"`
+	Principal  string `json:"principal"`
+	Peer       string `json:"peer"`
+	Code       string `json:"code"`
+	DurationMs int64  `json:"duration_ms"`
+}
+
+// DeadlineInterceptor supplies a server-side upper bound for unary requests.
+// A client deadline that expires sooner is preserved. Handlers receive the
+// derived context, and a response completed after the deadline is rejected so
+// callers never observe work as successful once its request window has ended.
+func DeadlineInterceptor(maxDuration time.Duration) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if maxDuration <= 0 {
+			return nil, status.Error(codes.Internal, "server request deadline is misconfigured")
+		}
+		if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) <= maxDuration {
+			if err := ctx.Err(); err != nil {
+				return nil, status.FromContextError(err).Err()
+			}
+			return handler(ctx, req)
+		}
+
+		requestCtx, cancel := context.WithTimeout(ctx, maxDuration)
+		defer cancel()
+		response, err := handler(requestCtx, req)
+		if contextErr := requestCtx.Err(); contextErr != nil {
+			return nil, status.FromContextError(contextErr).Err()
+		}
+		return response, err
+	}
+}
+
+// ConcurrencyInterceptor rejects excess unary requests instead of allowing an
+// unbounded queue to consume server memory. The semaphore is shared by every
+// RPC, including the public health endpoint, so its stated capacity reflects
+// all work accepted by the process.
+func ConcurrencyInterceptor(maxInFlight int) grpc.UnaryServerInterceptor {
+	if maxInFlight <= 0 {
+		return func(context.Context, any, *grpc.UnaryServerInfo, grpc.UnaryHandler) (any, error) {
+			return nil, status.Error(codes.Internal, "server concurrency limit is misconfigured")
+		}
+	}
+	semaphore := make(chan struct{}, maxInFlight)
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		select {
+		case semaphore <- struct{}{}:
+			defer func() { <-semaphore }()
+			return handler(ctx, req)
+		default:
+			return nil, status.Error(codes.ResourceExhausted, "server is at its concurrent-request limit")
+		}
+	}
+}
+
+// RateLimitInterceptor applies a shared token-bucket limit to unary requests.
+// KoraDB is a single-node service without tenants, so this is deliberately a
+// process-wide overload guard rather than a claim of per-tenant quota
+// isolation. A non-positive rate disables the guard for development.
+func RateLimitInterceptor(requestsPerSecond, burst int) grpc.UnaryServerInterceptor {
+	bucket := newTokenBucket(requestsPerSecond, burst)
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if !bucket.allow(time.Now()) {
+			return nil, status.Error(codes.ResourceExhausted, "server request rate limit exceeded")
+		}
+		return handler(ctx, req)
+	}
+}
+
+type tokenBucket struct {
+	mu        sync.Mutex
+	rate      float64
+	burst     float64
+	tokens    float64
+	refreshed time.Time
+}
+
+func newTokenBucket(requestsPerSecond, burst int) *tokenBucket {
+	if requestsPerSecond <= 0 {
+		return &tokenBucket{}
+	}
+	if burst <= 0 {
+		burst = requestsPerSecond
+	}
+	return &tokenBucket{
+		rate:      float64(requestsPerSecond),
+		burst:     float64(burst),
+		tokens:    float64(burst),
+		refreshed: time.Now(),
+	}
+}
+
+func (b *tokenBucket) allow(now time.Time) bool {
+	if b.rate <= 0 {
+		return true
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.tokens = minFloat(b.burst, b.tokens+now.Sub(b.refreshed).Seconds()*b.rate)
+	b.refreshed = now
+	if b.tokens < 1 {
+		return false
+	}
+	b.tokens--
+	return true
+}
+
+func minFloat(a, b float64) float64 {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 // AuthInterceptor authenticates the bearer token and enforces the RBAC policy
 // before any handler runs. It is fail-closed: a missing/invalid token yields
@@ -65,13 +186,18 @@ func AuthInterceptor(store *storage.Store) grpc.UnaryServerInterceptor {
 	}
 }
 
-// AuditInterceptor logs one structured record per request: who, what, outcome,
+// AuditInterceptor logs one JSON record per unary request: who, what, outcome,
 // peer, and latency. It deliberately logs NO request/response payloads or query
 // values, which can contain PII or otherwise-classified data. It records failed
 // requests (including auth failures) too. It is the outermost interceptor.
-func AuditInterceptor() grpc.UnaryServerInterceptor {
+func AuditInterceptor(metrics ...*Metrics) grpc.UnaryServerInterceptor {
+	var collector *Metrics
+	if len(metrics) > 0 {
+		collector = metrics[0]
+	}
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
+		collector.begin()
 		holder := &principalHolder{}
 		ctx = context.WithValue(ctx, holderCtxKey{}, holder)
 		resp, err := handler(ctx, req)
@@ -82,10 +208,28 @@ func AuditInterceptor() grpc.UnaryServerInterceptor {
 			principal = holder.p.Name + "/" + holder.p.Role.String()
 		}
 		code := status.Code(err)
-		log.Printf("audit method=%s principal=%s peer=%s code=%s dur=%s",
-			shortMethod(info.FullMethod), principal, peerAddr(ctx), code, dur)
+		collector.record(shortMethod(info.FullMethod), code.String(), dur)
+		recordAudit(auditRecord{
+			Timestamp:  time.Now().UTC().Format(time.RFC3339Nano),
+			Method:     shortMethod(info.FullMethod),
+			Principal:  principal,
+			Peer:       peerAddr(ctx),
+			Code:       code.String(),
+			DurationMs: dur.Milliseconds(),
+		})
 		return resp, err
 	}
+}
+
+func recordAudit(record auditRecord) {
+	encoded, err := json.Marshal(record)
+	if err != nil {
+		// Every field is a string or an integer, so this should be unreachable.
+		// Preserve availability if a future field violates that expectation.
+		log.Printf("audit serialization failed: %v", err)
+		return
+	}
+	auditLogger.Print(string(encoded))
 }
 
 // PrincipalFromContext returns the authenticated principal, if any.
@@ -100,14 +244,18 @@ func bearerToken(ctx context.Context) (string, error) {
 		return "", status.Error(codes.Unauthenticated, "no metadata")
 	}
 	vals := md.Get("authorization")
-	if len(vals) == 0 {
+	if len(vals) != 1 {
 		return "", status.Error(codes.Unauthenticated, "no authorization")
 	}
-	v := vals[0]
-	if strings.HasPrefix(v, "Bearer ") {
-		return strings.TrimSpace(strings.TrimPrefix(v, "Bearer ")), nil
+	v := strings.TrimSpace(vals[0])
+	if !strings.HasPrefix(v, "Bearer ") {
+		return "", status.Error(codes.Unauthenticated, "malformed authorization")
 	}
-	return strings.TrimSpace(v), nil
+	token := strings.TrimSpace(strings.TrimPrefix(v, "Bearer "))
+	if token == "" {
+		return "", status.Error(codes.Unauthenticated, "malformed authorization")
+	}
+	return token, nil
 }
 
 func peerAddr(ctx context.Context) string {

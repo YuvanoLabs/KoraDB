@@ -26,7 +26,7 @@ var methodMinRole = map[string]Role{
 }
 
 // RequiredRole returns the minimum role for a full gRPC method name such as
-// "/KoraDB.v1.KoraDB/Insert". ok is false for unmapped methods (caller must
+// "/yuvanolabs.koradb.v1.KoraDB/Insert". ok is false for unmapped methods (caller must
 // treat that as denied).
 func RequiredRole(fullMethod string) (Role, bool) {
 	name := fullMethod

@@ -2,7 +2,8 @@
 
 ## Product goal
 
-KoraDB is a protobuf-native database published by YuvanoLabs. It must be useful in two forms:
+KoraDB is a protobuf-native Community database published by YuvanoLabs. It must be useful in two
+deployment modes:
 
 - **Embedded:** an application imports a supported package, opens a local database file, and uses
   KoraDB without installing or operating a separate database server.
@@ -11,6 +12,19 @@ KoraDB is a protobuf-native database published by YuvanoLabs. It must be useful 
 
 Both forms must use the same storage semantics, schema rules, document behavior, and compatibility
 contract. A server is an optional deployment choice, never a requirement for local use.
+
+### Release delivery variants
+
+The two release variants are deliberately separate from the deployment modes:
+
+| Release variant | Audience | Contents | Deployment modes it enables |
+|---|---|---|---|
+| **Developer package/DLL** | Application developers | Versioned Go package and/or native DLL, idiomatic language packages, and integration documentation. | Embedded; remote service access when the client provider is released. |
+| **Operator installer** | Operators and local-tool users | Signed CLI, `KoraDB-server`, `KoraDB-restore`, service-management assets, and operational documentation. | Embedded CLI and secured single-node service. |
+
+Every supported feature is available in the Community product. The delivery
+variant only changes how users obtain and operate KoraDB; it must never create
+a paid or feature-gated edition.
 
 ## Product promise
 
@@ -40,7 +54,7 @@ the relevant capability is built, tested, and supported.
 - High-write or long-lived multi-writer workloads beyond the bbolt single-writer model.
 - Multi-region systems requiring automatic failover or linear scaling.
 - Workloads requiring joins, analytics, full-text search, arbitrary aggregations, or SQL.
-- Untrusted public-internet exposure before enterprise identity, limits, and abuse controls exist.
+- Untrusted public-internet exposure before identity, limits, and abuse controls exist.
 - Multi-tenant workloads before tenant boundaries and collection-level authorization are delivered.
 - Mobile offline synchronization and conflict resolution.
 
@@ -122,7 +136,7 @@ passes its support gates.
 - Provide generated/idiomatic remote clients, migration guidance, and examples for each language.
 - Publish installers only where they add value: server binaries, CLI tools, and native build tools.
 
-### Gate 4: enterprise security and governance
+### Gate 4: production security and governance
 
 - Add encryption at rest with managed keys, credential rotation, OIDC/workload identity, and
   fine-grained authorization.

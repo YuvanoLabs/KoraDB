@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	"KoraDB/internal/recovery"
+	"github.com/YuvanoLabs/KoraDB/internal/recovery"
 )
 
 func main() {

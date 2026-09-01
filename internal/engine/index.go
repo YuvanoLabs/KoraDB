@@ -6,8 +6,8 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"KoraDB/internal/index"
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/index"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 // indexInsert writes index entries for every indexed field of msg, in the

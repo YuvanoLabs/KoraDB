@@ -27,7 +27,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 // schemaBucket holds one record per registered schema. The leading "__"

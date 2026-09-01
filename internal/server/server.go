@@ -1,6 +1,6 @@
 // Package server is Phase B of KoraDB: the gRPC service implementation.
 //
-// It adapts the KoraDB.v1 wire contract onto the embedded engine (Layers 0–3)
+// It adapts the yuvanolabs.koradb.v1 wire contract onto the embedded engine (Layers 0–3)
 // and query executor (Layer 4). Documents cross the wire as JSON; the engine
 // stores them as protobuf bytes. The whole thing compiles into the
 // KoraDB-server binary with no external runtime dependencies.
@@ -14,9 +14,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "KoraDB/api/gen/KoraDBv1"
-	"KoraDB/internal/engine"
-	"KoraDB/internal/query"
+	pb "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/query"
 )
 
 // Server implements pb.KoraDBServer over an open engine.DB.
@@ -117,14 +117,31 @@ func (s *Server) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResp
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	results, err := query.Execute(s.db, req.GetCollection(), filter)
+	pageSize := int(req.GetPageSize())
+	if pageSize < 0 || pageSize > query.DefaultResultLimit {
+		return nil, status.Errorf(codes.InvalidArgument, "query: page size must be between 1 and %d", query.DefaultResultLimit)
+	}
+	resp := &pb.QueryResponse{}
+	if pageSize == 0 {
+		// Preserve the legacy unary-query contract. Clients that have not opted
+		// into pagination receive a limit error rather than a silent partial set.
+		results, err := query.ExecuteWithLimitContext(ctx, s.db, req.GetCollection(), filter, query.DefaultResultLimit)
+		if err != nil {
+			return nil, toStatus(err)
+		}
+		for _, r := range results {
+			resp.Results = append(resp.Results, &pb.Document{Id: r.ID, Json: string(r.JSON)})
+		}
+		return resp, nil
+	}
+	page, err := query.ExecutePageContext(ctx, s.db, req.GetCollection(), filter, pageSize, req.GetPageToken())
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	resp := &pb.QueryResponse{}
-	for _, r := range results {
+	for _, r := range page.Results {
 		resp.Results = append(resp.Results, &pb.Document{Id: r.ID, Json: string(r.JSON)})
 	}
+	resp.NextPageToken = page.NextPageToken
 	return resp, nil
 }
 
@@ -226,6 +243,12 @@ func toStatus(err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.As(err, &resultLimit):
 		return status.Error(codes.ResourceExhausted, err.Error())
+	case errors.Is(err, query.ErrInvalidPageToken):
+		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, context.Canceled):
+		return status.Error(codes.Canceled, err.Error())
+	case errors.Is(err, context.DeadlineExceeded):
+		return status.Error(codes.DeadlineExceeded, err.Error())
 	default:
 		// Most remaining engine errors are caused by bad client input (invalid
 		// .proto, malformed JSON, unknown field/collection).

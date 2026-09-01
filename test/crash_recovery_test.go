@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"KoraDB/internal/storage"
+	"github.com/YuvanoLabs/KoraDB/internal/storage"
 )
 
 const (

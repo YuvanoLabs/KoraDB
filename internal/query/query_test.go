@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
 )
 
 const personProto = `

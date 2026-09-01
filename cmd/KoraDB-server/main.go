@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -29,12 +30,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pb "KoraDB/api/gen/KoraDBv1"
-	"KoraDB/internal/auth"
-	"KoraDB/internal/buildinfo"
-	"KoraDB/internal/certgen"
-	"KoraDB/internal/engine"
-	"KoraDB/internal/server"
+	pb "github.com/YuvanoLabs/KoraDB/api/gen/KoraDBv1"
+	"github.com/YuvanoLabs/KoraDB/internal/auth"
+	"github.com/YuvanoLabs/KoraDB/internal/buildinfo"
+	"github.com/YuvanoLabs/KoraDB/internal/certgen"
+	"github.com/YuvanoLabs/KoraDB/internal/engine"
+	"github.com/YuvanoLabs/KoraDB/internal/server"
 )
 
 func main() {
@@ -73,8 +74,30 @@ func runServe(args []string) error {
 	tlsCert := fs.String("tls-cert", "", "server TLS certificate (PEM)")
 	tlsKey := fs.String("tls-key", "", "server TLS private key (PEM)")
 	clientCA := fs.String("tls-client-ca", "", "CA to verify client certs (enables mTLS)")
+	metricsAddr := fs.String("metrics-addr", "127.0.0.1:9090", "loopback Prometheus metrics address; empty disables metrics HTTP")
+	maxRequestDuration := fs.Duration("max-request-duration", 30*time.Second, "maximum duration of a unary request")
+	maxConcurrentRequests := fs.Int("max-concurrent-requests", 128, "maximum in-flight unary requests")
+	maxRequestsPerSecond := fs.Int("max-requests-per-second", 200, "shared unary request rate limit; zero disables it for development")
+	requestRateBurst := fs.Int("request-rate-burst", 400, "shared unary request burst limit")
 	insecure := fs.Bool("insecure", false, "DANGER: disable TLS and authentication (dev only)")
 	fs.Parse(args)
+	if *maxRequestDuration <= 0 {
+		return fmt.Errorf("--max-request-duration must be positive")
+	}
+	if *maxConcurrentRequests <= 0 {
+		return fmt.Errorf("--max-concurrent-requests must be positive")
+	}
+	if *maxRequestsPerSecond < 0 {
+		return fmt.Errorf("--max-requests-per-second must not be negative")
+	}
+	if *requestRateBurst <= 0 {
+		return fmt.Errorf("--request-rate-burst must be positive")
+	}
+	if *metricsAddr != "" {
+		if err := requireLoopbackAddress(*metricsAddr); err != nil {
+			return fmt.Errorf("--metrics-addr must be an explicit numeric loopback address (or empty to disable): %w", err)
+		}
+	}
 	if *insecure {
 		if err := requireLoopbackAddress(*addr); err != nil {
 			return err
@@ -87,6 +110,22 @@ func runServe(args []string) error {
 	}
 	defer db.Close()
 
+	metrics := server.NewMetrics()
+	if *metricsAddr != "" {
+		metricsListener, err := net.Listen("tcp", *metricsAddr)
+		if err != nil {
+			return fmt.Errorf("listen for metrics on %s: %w", *metricsAddr, err)
+		}
+		metricsServer := &http.Server{Handler: metrics.HTTPHandler(), ReadHeaderTimeout: 5 * time.Second}
+		defer metricsServer.Close()
+		go func() {
+			if serveErr := metricsServer.Serve(metricsListener); serveErr != nil && serveErr != http.ErrServerClosed {
+				log.Printf("KoraDB-server: metrics server stopped: %v", serveErr)
+			}
+		}()
+		log.Printf("KoraDB-server: Prometheus metrics on http://%s/metrics (loopback only)", *metricsAddr)
+	}
+
 	var opts = []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(4 << 20),
 		grpc.MaxSendMsgSize(4 << 20),
@@ -96,7 +135,12 @@ func runServe(args []string) error {
 		log.Print("# WARNING: --insecure: NO TLS and NO AUTH. Anyone who can   #")
 		log.Print("# reach this port has full admin access. Localhost dev only. #")
 		log.Print("############################################################")
-		opts = append(opts, grpc.ChainUnaryInterceptor(server.AuditInterceptor()))
+		opts = append(opts, grpc.ChainUnaryInterceptor(
+			server.AuditInterceptor(metrics),
+			server.DeadlineInterceptor(*maxRequestDuration),
+			server.ConcurrencyInterceptor(*maxConcurrentRequests),
+			server.RateLimitInterceptor(*maxRequestsPerSecond, *requestRateBurst),
+		))
 	} else {
 		// Secure by default: require TLS and a bootstrapped key.
 		if *tlsCert == "" || *tlsKey == "" {
@@ -118,7 +162,13 @@ func runServe(args []string) error {
 		opts = append(opts,
 			grpc.Creds(creds),
 			// Audit is outermost so it records auth failures too.
-			grpc.ChainUnaryInterceptor(server.AuditInterceptor(), server.AuthInterceptor(db.Store())),
+			grpc.ChainUnaryInterceptor(
+				server.AuditInterceptor(metrics),
+				server.DeadlineInterceptor(*maxRequestDuration),
+				server.ConcurrencyInterceptor(*maxConcurrentRequests),
+				server.AuthInterceptor(db.Store()),
+				server.RateLimitInterceptor(*maxRequestsPerSecond, *requestRateBurst),
+			),
 		)
 	}
 
@@ -138,7 +188,7 @@ func runServe(args []string) error {
 	} else if *clientCA != "" {
 		mode = "mTLS+auth"
 	}
-	log.Printf("KoraDB-server: listening on %s [%s], database %q", *addr, mode, *dbPath)
+	log.Printf("KoraDB-server: listening on %s [%s], database %q; request deadline %s, concurrency %d, rate %d/s burst %d", *addr, mode, *dbPath, *maxRequestDuration, *maxConcurrentRequests, *maxRequestsPerSecond, *requestRateBurst)
 	return grpcServer.Serve(lis)
 }
 
@@ -264,7 +314,10 @@ Usage:
 Subcommands:
   serve       run the server (default)
                 --addr :50051  --db KoraDB.db
-                --tls-cert FILE --tls-key FILE [--tls-client-ca FILE]
+				--tls-cert FILE --tls-key FILE [--tls-client-ca FILE]
+				[--metrics-addr 127.0.0.1:9090]
+				[--max-request-duration 30s] [--max-concurrent-requests 128]
+				[--max-requests-per-second 200] [--request-rate-burst 400]
                 --insecure   (DANGER: no TLS, no auth; loopback dev only)
   bootstrap   create the first admin API key (run with the server stopped)
                 --db KoraDB.db --name admin --role admin
